@@ -1,0 +1,9 @@
+{% block content %}
+
+<form action="/rest/v1/file-post/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit">
+</form>
+
+{% endblock %}

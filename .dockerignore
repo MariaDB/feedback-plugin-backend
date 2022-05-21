@@ -1,0 +1,2 @@
+# Ignore datadir as created by dev deployment
+docker/mariadb/datadir

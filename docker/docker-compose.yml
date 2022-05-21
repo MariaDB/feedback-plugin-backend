@@ -1,0 +1,53 @@
+version: '3'
+services:
+  db:
+    build:
+      context: ../
+      dockerfile: docker/mariadb/Dockerfile
+    restart: always
+    environment:
+      - MARIADB_AUTO_UPGRADE='YES'
+      - MARIADB_ROOT_PASSWORD
+      - DJANGO_DB_NAME
+      - DJANGO_DB_USER_NAME
+      - DJANGO_DB_USER_PASSWORD
+    volumes:
+      - ${MARIADB_DATADIR}:/var/lib/mysql
+      - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d
+  web:
+    build:
+      context: ../
+      dockerfile: docker/app/Dockerfile
+    restart: always
+    environment:
+      - DJANGO_ALLOWED_HOSTS
+      - DJANGO_SECRET_KEY
+      - DJANGO_DEBUG
+      - DJANGO_DB_NAME
+      - DJANGO_DB_USER_NAME
+      - DJANGO_DB_USER_PASSWORD
+      - DJANGO_LOG_LEVEL
+    command: gunicorn feedback_plugin.wsgi --bind 0.0.0.0:8000 -w 6 -t 4
+                      --capture-output
+                      --access-logfile /app/logs/gunicorn-access.log
+                      --reload
+    volumes:
+      # nginx serves the apps static files, share volume
+      - static_volume:/app/src/staticfiles
+      - ../src/:/app/src/
+    depends_on:
+      - db
+
+  nginx:
+    build: ./nginx
+    restart: always
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+    ports:
+      - 8000:80
+    depends_on:
+      - db
+      - web
+
+volumes:
+  static_volume:
