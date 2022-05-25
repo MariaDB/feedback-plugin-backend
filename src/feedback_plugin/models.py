@@ -57,6 +57,9 @@ class Upload(models.Model):
     db_column='server_id'
   )
 
+  def __str__(self):
+    return f'{self.upload_time}, {self.server.id}'
+
 
 class Data(models.Model):
   '''
