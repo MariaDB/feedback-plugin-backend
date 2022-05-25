@@ -40,6 +40,10 @@ is:
 docker exec -it docker_web_1 python manage.py test
 ```
 
+The server listens on port 8000 on the local machine. You can access it via:
+
+http://127.0.0.1:8000
+
 # Contributing
 The MariaDB Foundation welcomes contributions to this project. Feel free to
 submit a pull request via the regular GitHub workflow.
