@@ -150,7 +150,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'INFO', #os.environ['DJANGO_LOG_LEVEL'],
+            'level': os.environ['DJANGO_LOG_LEVEL'],
             'propagate': False,
         },
         'views': {
