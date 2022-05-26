@@ -1,0 +1,30 @@
+name: build
+
+# //TEMP we should probably filter a bit better here to not start the CI if
+# - documentation changes
+# - non impacting changes...
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "56 10 * * 1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: build
+        run: |
+          cd docker
+          docker-compose up -d --build
+          docker-compose logs --tail="all"
+          docker ps
+      - name: test
+        run: |
+          # //TEMP the db needs to be up, there is probably a better way here
+          # (healthcheck?)
+          echo "Sleeping to let time for the DB to start"
+          sleep 10
+          docker exec -i $(docker ps --format "{{.Names}}" | grep web) python manage.py test

@@ -1,5 +1,6 @@
 # pull official base image
-FROM python:3.9
+ARG python_version=3.9
+FROM "python:$python_version"
 
 # set work directory
 WORKDIR /app/

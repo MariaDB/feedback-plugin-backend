@@ -1,4 +1,5 @@
-FROM mariadb:10.6
+ARG mariadb_version=10.6
+FROM "mariadb:$mariadb_version"
 
 RUN apt-get update && apt-get install -y python3 python3-pip libmariadb-dev
 RUN pip install --upgrade pip && \
