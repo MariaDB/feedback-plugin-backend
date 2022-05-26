@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import os
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
@@ -6,6 +7,7 @@ from django.test import TestCase
 from feedback_plugin.etl import process_raw_data
 from feedback_plugin.models import (RawData, Server, Upload, Data,
                                     ComputedServerFact)
+from feedback_plugin.tests.utils import load_test_data, create_test_database
 
 class ProcessRawData(TestCase):
   def test_process_raw_data(self):
@@ -68,3 +70,14 @@ class ProcessRawData(TestCase):
     self.assertEqual(ComputedServerFact.objects.
                        filter(name='country_code', server_id=s2.id)[0].value,
                        'UA')
+
+  def test_load_fixtures(self):
+    test_data = load_test_data(os.path.join(
+                                 os.path.dirname(os.path.realpath(__file__)),
+                                 'test_data/'))
+
+    create_test_database(test_data)
+
+    self.assertEqual(Upload.objects.all().count(), 8)
+    self.assertEqual(Server.objects.all().count(), 5)
+    self.assertEqual(ComputedServerFact.objects.all().count(), 20)
