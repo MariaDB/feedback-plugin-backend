@@ -23,8 +23,18 @@ jobs:
           docker ps
       - name: test
         run: |
-          # //TEMP the db needs to be up, there is probably a better way here
-          # (healthcheck?)
-          echo "Sleeping to let time for the DB to start"
-          sleep 10
-          docker exec -i $(docker ps --format "{{.Names}}" | grep web) python manage.py test
+          WEB_CONTAINER=$(docker ps --format "{{.Names}}" | grep web)
+          for i in $(seq 10); do
+            if docker exec -i "$WEB_CONTAINER" python manage.py check --database default &> /dev/null; then
+              DB_READY=1
+              break
+            fi
+            echo "Waiting for database..."
+            sleep 2
+          done
+          if [ -z "$DB_READY" ]; then
+            echo "Couldn\'t connect to the database."
+            exit 1
+          fi
+
+          docker exec -i "$WEB_CONTAINER" python manage.py test
