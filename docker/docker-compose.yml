@@ -3,6 +3,8 @@ services:
   db:
     build:
       context: ../
+      args:
+        mariadb_version: "${MARIADB_VERSION}"
       dockerfile: docker/mariadb/Dockerfile
     restart: always
     environment:
@@ -17,6 +19,8 @@ services:
   web:
     build:
       context: ../
+      args:
+        python_version: "${PYTHON_VERSION}"
       dockerfile: docker/app/Dockerfile
     restart: always
     environment:
@@ -39,7 +43,10 @@ services:
       - db
 
   nginx:
-    build: ./nginx
+    build:
+      context: ./nginx
+      args:
+        nginx_version: "${NGINX_VERSION}"
     restart: always
     volumes:
       - static_volume:/home/app/web/staticfiles
