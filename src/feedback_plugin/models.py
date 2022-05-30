@@ -20,7 +20,6 @@ from django_countries.fields import CountryField
 from django.utils import timezone
 
 
-
 class RawData(models.Model):
   '''
     This table holds the raw upload data reported.
@@ -39,11 +38,6 @@ class Server(models.Model):
     This table holds an entry for each unique server that has reported
     data to the feedback plugin.
   '''
-  # uid = models.CharField(max_length=28)
-  # metadata = models.('ServerMetadata',
-  #   on_delete=models.PROTECT,
-  #   db_column='metadata_id'
-  # )
   pass
 
 
@@ -56,6 +50,12 @@ class Upload(models.Model):
     on_delete=models.PROTECT,
     db_column='server_id'
   )
+
+  class Meta:
+    indexes = [
+        models.Index(fields=['upload_time', 'server_id'])
+    ]
+
 
   def __str__(self):
     return f'{self.upload_time}, {self.server.id}'
@@ -121,22 +121,3 @@ class Charts(models.Model):
 
   def __str__(self):
     return self.name
-
-
-# class CurrentUploads(models.Model):
-#   '''
-#     This table holds the a reference to the last upload of each server.
-
-#     Effectively a cache for:
-#     SELECT server_id, max(upload_id)
-#     FROM upload
-#     GROUP BY server_id;
-#   '''
-#   upload = models.OneToOneField('Upload',
-#     on_delete=models.PROTECT,
-#     db_column='upload_id',
-#     primary_key=True
-#   )
-#   generated = models.DateTimeField(auto_now_add=True)
-
-
