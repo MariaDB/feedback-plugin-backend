@@ -1,4 +1,4 @@
-version: '3'
+version: '2.1'
 services:
   db:
     build:
@@ -13,6 +13,12 @@ services:
       - DJANGO_DB_NAME
       - DJANGO_DB_USER_NAME
       - DJANGO_DB_USER_PASSWORD
+      - MARIADB_MYSQL_LOCALHOST_USER
+    healthcheck:
+      test: /usr/local/bin/healthcheck.sh --su=mysql --connect --innodb_initialized
+      interval: 3s
+      timeout: 2s
+      retries: 3
     volumes:
       - ${MARIADB_DATADIR}:/var/lib/mysql
       - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d
@@ -40,8 +46,8 @@ services:
       - static_volume:/app/src/staticfiles
       - ../src/:/app/src/
     depends_on:
-      - db
-
+      db:
+        condition: service_healthy
   nginx:
     build:
       context: ./nginx
