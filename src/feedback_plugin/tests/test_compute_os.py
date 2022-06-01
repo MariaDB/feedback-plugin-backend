@@ -2,8 +2,9 @@ from datetime import datetime, timedelta, timezone
 
 from django.test import TestCase, Client
 
-from feedback_plugin.etl import (add_server_system_facts,
-                                 add_os_srv_fact_if_missing)
+from feedback_plugin.data_processing.etl import (extract_server_facts,
+                                                 add_os_srv_fact_if_missing)
+from feedback_plugin.data_processing.extractors import ArchitectureExtractor
 from feedback_plugin.models import Data, Upload, Server, ComputedServerFact
 
 class ComputeOS(TestCase):
@@ -112,74 +113,79 @@ class ComputeOS(TestCase):
     # Server 7 facts save
     f1_s7.save()
 
-    add_server_system_facts(time2, time1)
 
-    self.assertEqual(Server.objects.all().count(), 7)
-    self.assertEqual(Upload.objects.all().count(), 8)
-    self.assertEqual(Data.objects.all().count(), 17)
-    self.assertEqual(ComputedServerFact.objects.all().count(), 12)
+    def check_expected_results():
+        self.assertEqual(Server.objects.all().count(), 7)
+        self.assertEqual(Upload.objects.all().count(), 8)
+        self.assertEqual(Data.objects.all().count(), 17)
+        self.assertEqual(ComputedServerFact.objects.all().count(), 12)
 
-    # Server 1 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s1,
-                        name='architecture').value,
-                      'x86_64')
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s1,
-                        name='os_name').value,
-                      'Linux')
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s1,
-                        name='os_version').value,
-                      'unknown')
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s1,
-                        name='distribution').value,
-                      'os: NAME=Gentoo')
+        # Server 1 expected results
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s1,
+                            name='hardware_architecture').value,
+                          'x86_64')
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s1,
+                            name='operating_system').value,
+                          'Linux')
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s1,
+                            name='operating_system_version').value,
+                          'unknown')
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s1,
+                            name='distribution').value,
+                          'Gentoo')
 
-    # Server 2 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s2,
-                        name='architecture').value,
-                      'x86')
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s2,
-                        name='os_name').value,
-                      'Windows')
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s2,
-                        name='os_version').value,
-                      'unknown')
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s2,
-                        name='distribution').value,
-                      'centos: CentOS release 6.9 (Final)')
+        # Server 2 expected results
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s2,
+                            name='hardware_architecture').value,
+                          'x86')
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s2,
+                            name='operating_system').value,
+                          'Windows')
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s2,
+                            name='operating_system_version').value,
+                          'unknown')
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s2,
+                            name='distribution').value,
+                          'CentOS')
 
-    # Server 3 expected results
-    with self.assertRaises(ComputedServerFact.DoesNotExist):
-      ComputedServerFact.objects.get(server=s3,name='VERSION').value
+        # Server 3 expected results
+        with self.assertRaises(ComputedServerFact.DoesNotExist):
+          ComputedServerFact.objects.get(server=s3,name='VERSION').value
 
 
-    # Server 4 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s4,
-                        name='architecture').value,
-                      'x86_64')
-    # Server 5 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s5,
-                        name='os_name').value,
-                      'Linux')
-    # Server 6 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s6,
-                        name='os_version').value,
-                      'unknown')
-    # Server 7 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s7,
-                        name='distribution').value,
-                      'os: NAME=Gentoo')
+        # Server 4 expected results
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s4,
+                            name='hardware_architecture').value,
+                          'x86_64')
+        # Server 5 expected results
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s5,
+                            name='operating_system').value,
+                          'Linux')
+        # Server 6 expected results
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s6,
+                            name='operating_system_version').value,
+                          'unknown')
+        # Server 7 expected results
+        self.assertEqual(ComputedServerFact.objects.get(
+                            server=s7,
+                            name='distribution').value,
+                          'Gentoo')
+
+    extract_server_facts(time2, time1, [ArchitectureExtractor()])
+    check_expected_results()
+    extract_server_facts(time2, time1, [ArchitectureExtractor()])
+    check_expected_results()
 
 
   def test_os_name(self):

@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 
 from django.test import TestCase
 
-from feedback_plugin.etl import compute_upload_facts
+from feedback_plugin.data_processing.etl import compute_upload_facts
 from feedback_plugin.models import Server, Upload, Data, ComputedUploadFact
 
 class TestComputeVersion(TestCase):

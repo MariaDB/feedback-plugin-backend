@@ -41,7 +41,6 @@ from feedback_plugin.models import *
 logger = logging.getLogger('views')
 
 def feedback_server_count(request):
-
   query = Upload.objects.annotate(
     up_year=ExtractYear('uploaded'),
     up_month=ExtractMonth('uploaded'),
@@ -96,7 +95,6 @@ def feedback_version_breakdown(request):
 
 
 def feedback_architecture(request):
-
   query = Data.objects.filter(
     name='uname_machine'
   ).select_related(
@@ -117,7 +115,6 @@ def feedback_architecture(request):
 
 
 def feedback_os(request) -> JsonResponse:
-
   query = Data.objects.filter(
     name='uname_sysname'
   ).select_related('upload__currentuploads').values(

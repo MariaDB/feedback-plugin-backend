@@ -1,10 +1,11 @@
 import csv
 import re
+from collections import defaultdict
 from datetime import datetime, timezone
 from io import StringIO
 
-from .models import (ComputedServerFact, ComputedUploadFact, Data,
-                     RawData, Server, Upload)
+from feedback_plugin.models import (ComputedServerFact, ComputedUploadFact,
+                                    Data, RawData, Server, Upload)
 from django.db.models import Q
 
 def process_raw_data():
@@ -30,18 +31,15 @@ def process_raw_data():
         or len(data['FEEDBACK_SERVER_UID']) == 0):
       continue
 
-    uid = data['FEEDBACK_SERVER_UID']
-
     if ('FEEDBACK_USER_INFO' in data
         and data['FEEDBACK_USER_INFO'] == 'mysql-test'):
       continue
 
-
+    uid = data['FEEDBACK_SERVER_UID']
     try:
       srv_uid_fact = ComputedServerFact.objects.get(name='uid', value=uid)
       server = Server.objects.get(id=srv_uid_fact.server.id)
     except ComputedServerFact.DoesNotExist:
-
       server = Server()
       srv_uid_fact = ComputedServerFact(name='uid',
                                         value=uid,
@@ -75,8 +73,10 @@ def process_raw_data():
     srv_facts_update = map(lambda x: x[1], filter(lambda x: not x[0], srv_facts))
 
     # Create Server computed facts for this RawData.
-    ComputedServerFact.objects.bulk_create(srv_facts_create)
-    ComputedServerFact.objects.bulk_update(srv_facts_update, ['value'])
+    ComputedServerFact.objects.bulk_create(srv_facts_create,
+                                           batch_size=1000)
+    ComputedServerFact.objects.bulk_update(srv_facts_update, ['value'],
+                                           batch_size=1000)
 
     # Create Upload and all Data entries for this RawData.
     upload = Upload(upload_time=raw_upload_time, server=server)
@@ -122,80 +122,87 @@ def compute_upload_facts(start_date, end_date):
     version_facts.append(version['minor'])
     version_facts.append(version['point'])
 
-  ComputedUploadFact.objects.bulk_create(version_facts)
+  ComputedUploadFact.objects.bulk_create(version_facts, batch_size=1000)
 
 
+def extract_server_facts(start_date, end_date, data_extractors):
+  keys = []
+  for extractor in data_extractors:
+    keys = keys + extractor.get_required_keys()
+  key_filter = Q()
+  for key in keys:
+    key_filter |= Q(key__iexact=key)
 
-def add_server_system_facts(start_date, end_date):
   # Extract server data about Architecture and OS
-  data_to_process = Data.objects.filter(
-                      Q(upload__upload_time__gte=start_date) &
-                      Q(upload__upload_time__lte=end_date) &
-                      (Q(key='uname_machine')
-                       | Q(key='uname_sysname')
-                       | Q(key='Uname_version')
-                       | Q(key='Uname_distribution'))).select_related(
-                      'upload__server')
+  data_to_process = (Data.objects
+      .filter(Q(upload__upload_time__gte=start_date) &
+              Q(upload__upload_time__lte=end_date) &
+              key_filter)
+      .select_related('upload__server')
+  )
 
-  system_dict = {}
-  system_fact = []
-
+  servers = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
   for data in data_to_process:
     # In case there are multiple entries for the same server, use the
     # latest one only
     server_id = data.upload.server.id
-    if (server_id not in system_dict):
-      system_dict[server_id] = {}
+    upload_id = data.upload.id
+    # Appending to a list allows for multiple values for the same key.
+    servers[server_id][upload_id][data.key.lower()].append(data.value)
 
-    system_dict[server_id][data.key] = ComputedServerFact(
-                                         server=data.upload.server,
-                                         name=data.key,
-                                         value=data.value)
+  facts = defaultdict(dict)
+  for extractor in data_extractors:
+    new_facts = extractor.extract_facts(servers)
+    for s_id in new_facts:
+      facts[s_id].update(new_facts[s_id])
 
-  for server_id, fact_dict in system_dict.items():
-    if 'uname_machine' in fact_dict:
-      def clean_arch_entries(arch):
+  # Arrange all facts { 'key' : { server_id : value ... } }
+  facts_by_key = defaultdict(dict)
+  for server_id in facts:
+    for key in facts[server_id]:
+      facts_by_key[key][server_id] = facts[server_id][key]
 
-        if arch.startswith('HP'):
-          return 'HP'
 
-        return arch
+  # We insert all computed facts with a bulk-insert per-key.
+  for key in facts_by_key:
+    servers_with_computed_fact = set(facts_by_key[key].keys())
 
-      # Change the fact name to something easy to understand
-      fact_dict['uname_machine'].name = 'architecture'
-      # Clean up architecture names to something readable
-      arch = clean_arch_entries(fact_dict['uname_machine'].value)
-      fact_dict['uname_machine'].value = arch
-      system_fact.append(fact_dict['uname_machine'])
+    # To avoid inserting for every individual fact and retrying
+    # with an update if the fact already exists, compute a list of
+    # facts already present and call update for those via bulk_update.
+    #
+    # TODO(cvicentiu) This could be optimized by creating a unique key
+    # for each ComputedServerFact (server_id, name) and relying on
+    # the database to "ignore" updates.
+    # This optimization only works for server facts that do not change
+    # over the lifespan of the server.
+    facts_already_in_db = (ComputedServerFact.objects
+        .filter(server__id__in=servers_with_computed_fact,
+                name=key))
 
-    if 'uname_sysname' in fact_dict:
-      fact_dict['uname_sysname'].name = 'os_name'
-      system_fact.append(fact_dict['uname_sysname'])
+    facts_in_db_by_s_id = {}
+    for fact in facts_already_in_db:
+      facts_in_db_by_s_id[fact.server.id] = fact
 
-    if 'Uname_version' in fact_dict:
-      def clean_os_version(os_ver):
-        if os_ver.startswith('Windows'):
-          return os_ver
+    # In order to not do an insert for every individual fact, compute
+    # a list of facts that need to be updated and a list of facts
+    # that need to be created.
+    facts_create = []
+    facts_update = []
+    for s_id in servers_with_computed_fact:
+      fact_value = facts_by_key[key][s_id]
+      computed_fact = ComputedServerFact(name=key, value=fact_value,
+                                         server_id=s_id)
+      if s_id in facts_in_db_by_s_id:
+        facts_in_db_by_s_id[s_id].value = fact_value
+        facts_update.append(facts_in_db_by_s_id[s_id])
+      else:
+        facts_create.append(computed_fact)
 
-        # For cases like '#1 SMP Wed Mar 23 09:04:02 UTC 2022'
-        if 'SMP' in os_ver:
-          return 'unknown' #TODO: see if there is a better solution.
-        return 'unknown'
-
-      # Change the fact name to something easy to understand
-      fact_dict['Uname_version'].name = 'os_version'
-      # Clean up architecture names to something readable
-      os_ver = clean_os_version(fact_dict['Uname_version'].value)
-      fact_dict['Uname_version'].value = os_ver
-      system_fact.append(fact_dict['Uname_version'])
-
-    if 'Uname_distribution' in fact_dict:
-      # def clean_distribution(dist):
-
-      fact_dict['Uname_distribution'].name = 'distribution'
-      system_fact.append(fact_dict['Uname_distribution'])
-
-  ComputedServerFact.objects.bulk_create(system_fact)
+    ComputedServerFact.objects.bulk_create(facts_create,
+                                           batch_size=1000)
+    ComputedServerFact.objects.bulk_update(facts_update, ['value'],
+                                           batch_size=1000)
 
 
 def add_os_srv_fact_if_missing(start_date, end_date):

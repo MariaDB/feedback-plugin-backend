@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from django.test import TestCase
 
-from feedback_plugin.etl import process_raw_data
+from feedback_plugin.data_processing.etl import process_raw_data
 from feedback_plugin.models import (RawData, Server, Upload, Data,
                                     ComputedServerFact)
 from feedback_plugin.tests.utils import load_test_data, create_test_database

@@ -6,7 +6,7 @@ import os
 import yaml
 
 from feedback_plugin.models import RawData
-from feedback_plugin.etl import process_raw_data
+from feedback_plugin.data_processing.etl import process_raw_data
 
 def load_test_data(test_data_path):
 
