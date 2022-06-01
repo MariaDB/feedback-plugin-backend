@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
 import os
-from zoneinfo import ZoneInfo
+import sys
+if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+  from zoneinfo import ZoneInfo
+else:
+  from backports.zoneinfo import ZoneInfo
 
 from django.test import TestCase
 
@@ -75,8 +79,10 @@ class ProcessRawData(TestCase):
     test_data = load_test_data(os.path.join(
                                  os.path.dirname(os.path.realpath(__file__)),
                                  'test_data/'))
-
-    create_test_database(test_data)
+    try:
+      create_test_database(test_data)
+    except:
+      print("Problem with creating the test data.\nPossible missing grants for the user.")
 
     self.assertEqual(Upload.objects.all().count(), 8)
     self.assertEqual(Server.objects.all().count(), 5)

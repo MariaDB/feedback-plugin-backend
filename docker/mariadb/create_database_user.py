@@ -38,7 +38,7 @@ sql = "grant all on `{}`.* to `{}`".format(
 cur.execute(sql)
 
 print('Granting rights for running Django tests...')
-sql = "grant create on *.* to `{}`".format(
+sql = "grant create, alter on *.* to `{}`".format(
          os.environ['DJANGO_DB_USER_NAME'])
 cur.execute(sql)
 
