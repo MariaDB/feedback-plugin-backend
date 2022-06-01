@@ -20,13 +20,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ['DJANGO_DEBUG'])
+DEBUG = bool(os.environ.get('DJANGO_DEBUG'))
+if DEBUG == None:
+    DEBUG = True
 
-ALLOWED_HOSTS = [os.environ['DJANGO_ALLOWED_HOSTS']]
+if os.environ.get('DJANGO_ALLOWED_HOSTS'):
+    ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
+# DB_HOST default value will be DNS on docker_default network for easier usage in docker-compose
+# DB_HOST empty means localhost, instead one should set the unix socket and/or other host
+DB_HOST = os.environ.get('DJANGO_DB_HOST')
+if DB_HOST == None:
+    DB_HOST = 'docker_db_1'
 
+LOG_LEVEL = os.environ.get('DJANGO_LOG_LEVEL')
+if LOG_LEVEL == None:
+    LOG_LEVEL = 'ERROR'
 
 # Application definition
 
@@ -72,14 +83,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'feedback_plugin.wsgi.application'
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ['DJANGO_DB_NAME'],
+        'NAME': os.environ.get('DJANGO_DB_NAME'),
         'USER': os.environ['DJANGO_DB_USER_NAME'],
         'PASSWORD': os.environ['DJANGO_DB_USER_PASSWORD'],
-        'HOST': 'db',
+        'HOST': DB_HOST,
         'OPTIONS': {'charset': 'utf8',
                     'use_unicode': True},
         'TEST': {
@@ -150,12 +160,12 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': os.environ['DJANGO_LOG_LEVEL'],
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'views': {
             'handlers': ['console'],
-            'level': os.environ['DJANGO_LOG_LEVEL'],
+            'level': LOG_LEVEL,
             'propagate': False,
         },
     },
