@@ -1,0 +1,22 @@
+image: docker/compose:latest
+services:
+# If using private runners, privilegedMode must be enabled in order to use docker-in-docker
+  - docker:dind
+variables:
+# This variable must be set or else "docker exec ..." will not be able to find
+# a running docker container. See: https://hub.docker.com/_/docker under TLS.
+  DOCKER_TLS_CERTDIR: ""
+
+before_script:
+  - cd docker/
+  - chmod +x app/entrypoint.sh
+  - docker-compose up -d db
+  - docker-compose up -d --build
+
+stages:
+  - test
+
+python-test:
+  stage: test
+  script:
+    - docker exec -i docker_web_1 python manage.py test
