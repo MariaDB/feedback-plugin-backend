@@ -32,3 +32,6 @@ from upload-to-upload. For example `Uptime`.
 **Charts**
 : This table stores numerical values in a useful form to be presented by a front
 end. This is what is used to offer quick replies to all REST API endpoints.
+
+# Updating requirements.txt
+Use pipreqs to generate an up-to-dte requirements.txt
