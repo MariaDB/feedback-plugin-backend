@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install libgdal-dev -y
 
 # install dependencies
 RUN pip install --upgrade pip && \
-    pip install mariadb gunicorn
+    pip install mariadb==1.0.11 gunicorn
 
 COPY ./docker/app/requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
