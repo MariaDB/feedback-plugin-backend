@@ -171,6 +171,9 @@ def extract_server_facts(start_date, end_date, data_extractors):
     # with an update if the fact already exists, compute a list of
     # facts already present and call update for those via bulk_update.
     #
+    # This query returns only one fact per server because the key is
+    # unique.
+    #
     # TODO(cvicentiu) This could be optimized by creating a unique key
     # for each ComputedServerFact (server_id, name) and relying on
     # the database to "ignore" updates.
@@ -191,12 +194,13 @@ def extract_server_facts(start_date, end_date, data_extractors):
     facts_update = []
     for s_id in servers_with_computed_fact:
       fact_value = facts_by_key[key][s_id]
-      computed_fact = ComputedServerFact(name=key, value=fact_value,
-                                         server_id=s_id)
+
       if s_id in facts_in_db_by_s_id:
         facts_in_db_by_s_id[s_id].value = fact_value
         facts_update.append(facts_in_db_by_s_id[s_id])
       else:
+        computed_fact = ComputedServerFact(name=key, value=fact_value,
+                                           server_id=s_id)
         facts_create.append(computed_fact)
 
     ComputedServerFact.objects.bulk_create(facts_create,
@@ -205,6 +209,7 @@ def extract_server_facts(start_date, end_date, data_extractors):
                                            batch_size=1000)
 
 
+# TODO: Not used atm
 def add_os_srv_fact_if_missing(start_date, end_date):
 
   # Get the server list where the OS name exists
@@ -228,7 +233,7 @@ def add_os_srv_fact_if_missing(start_date, end_date):
   ComputedServerFact.objects.bulk_create(update_list)
 
 
-
+# TODO: Not used atm
 def compute_all_server_facts(start_date, end_date):
 
 

@@ -2,6 +2,7 @@ import csv
 from datetime import datetime, timezone
 import glob
 import os
+from pathlib import Path
 
 import yaml
 
@@ -9,7 +10,6 @@ from feedback_plugin.models import RawData
 from feedback_plugin.data_processing.etl import process_raw_data
 
 def load_test_data(test_data_path):
-
     with open(os.path.join(test_data_path, 'metadata.yml'), 'r') as f:
         metadata = yaml.safe_load(f)
 
@@ -36,7 +36,10 @@ def load_test_data(test_data_path):
         result.append(entry)
     return result
 
-def create_test_database(test_data):
+def create_test_database(test_data_path=os.path.join(Path(__file__).parent,
+                                                     'test_data/')):
+
+    test_data = load_test_data(test_data_path)
     for upload in test_data:
         d = RawData(country=upload['country'],
                     data=upload['data'],

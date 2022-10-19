@@ -10,7 +10,7 @@ class ArchitectureExtractor(DataExtractor):
 
   def get_required_keys(self):
     return ['uname_machine', 'uname_sysname', 'uname_version',
-            'uname_distribution']
+            'uname_distribution', 'uname_release']
 
   @staticmethod
   def extract_distribution(upload):
@@ -88,6 +88,21 @@ class ArchitectureExtractor(DataExtractor):
     # to be changed to cover and extract a wide range of data points.
     if 'smp' in version_string:
       version_string = 'unknown'
+      try:
+        version_string = 'unknown'
+        distribution_string = ''
+        if 'uname_distribution' in upload:
+          distribution_string = upload['uname_distribution'][0].lower()
+
+        # Crude expression for CentOS 8
+        if 'linux release' in distribution_string:
+          first_digit = re.search('[0-9]+', distribution_string)
+          if first_digit is not None:
+            version_string = distribution_string[first_digit.start():]
+
+      except KeyError:
+        pass
+
     return version_string
 
   def extract_facts(self, servers):

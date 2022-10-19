@@ -4,6 +4,7 @@ from django.test import TestCase, Client
 
 from feedback_plugin.data_processing.etl import (extract_server_facts,
                                                  add_os_srv_fact_if_missing)
+from feedback_plugin.tests.utils import create_test_database
 from feedback_plugin.data_processing.extractors import ArchitectureExtractor
 from feedback_plugin.models import Data, Upload, Server, ComputedServerFact
 
@@ -182,47 +183,43 @@ class ComputeOS(TestCase):
                             name='distribution').value,
                           'Gentoo')
 
+    # Test first insert
     extract_server_facts(time2, time1, [ArchitectureExtractor()])
     check_expected_results()
+    # Test update
     extract_server_facts(time2, time1, [ArchitectureExtractor()])
     check_expected_results()
 
 
-  def test_os_name(self):
+  def test_on_all(self):
+    create_test_database()
 
-    time1 = datetime.now(timezone.utc)
-    time2 = time1 - timedelta(seconds=3600)
+    begin = datetime(year=2022, month=1, day=1, tzinfo=timezone.utc)
+    end = datetime(year=2022, month=3, day=1, tzinfo=timezone.utc)
 
-    # Server declaration
-    s1 = Server()
-    s2 = Server()
+    arch_extractor = ArchitectureExtractor()
+    extract_server_facts(begin, end, [arch_extractor])
 
-    # Upload declaration
-    u1 = Upload(upload_time=time1, server=s1)
-    u2 = Upload(upload_time=time2, server=s2)
 
-    f1 = ComputedServerFact(server=s1, name='os_name', value='Windows')
+    servers = Server.objects.all()
 
-    s1.save()
-    s2.save()
-    u1.save()
-    u2.save()
-    f1.save()
+    extracted_facts= ComputedServerFact.objects.filter(
+            name__in= ['operating_system', 'hardware_architecture',
+                       'distribution', 'operating_system_version'])
 
-    add_os_srv_fact_if_missing(time2, time1)
+    #print(extracted_facts)
+    # One fact for each server.
+    self.assertEqual(servers.count(), 5)
+    self.assertEqual(extracted_facts.filter(name='operating_system',
+                                            value='Windows').count(), 4)
+    self.assertEqual(extracted_facts.filter(name='operating_system_version',
+                                            value__icontains='windows').count(), 4)
+    self.assertEqual(extracted_facts.filter(name='operating_system',
+                                            value='Linux').count(),1)
+    self.assertEqual(extracted_facts.filter(name='distribution',
+                                            value='CentOS').count(), 1)
+    self.assertEqual(extracted_facts.filter(name='operating_system_version',
+                                            value='8.2.2004 (core)').count(), 1)
 
-    self.assertEqual(Server.objects.all().count(), 2)
-    self.assertEqual(Upload.objects.all().count(), 2)
-    self.assertEqual(ComputedServerFact.objects.all().count(), 2)
 
-    # Server 1 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s1,
-                        name='os_name').value,
-                     'Windows')
 
-    # Server 1 expected results
-    self.assertEqual(ComputedServerFact.objects.get(
-                        server=s2,
-                        name='os_name').value,
-                     'Linux')

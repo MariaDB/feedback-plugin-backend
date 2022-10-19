@@ -72,11 +72,7 @@ class ProcessRawData(TestCase):
                        'UA')
 
   def test_load_fixtures(self):
-    test_data = load_test_data(os.path.join(
-                                 os.path.dirname(os.path.realpath(__file__)),
-                                 'test_data/'))
-
-    create_test_database(test_data)
+    create_test_database()
 
     self.assertEqual(Upload.objects.all().count(), 8)
     self.assertEqual(Server.objects.all().count(), 5)
