@@ -147,10 +147,12 @@ def file_post(request):
       ip = request.META['HTTP_X_REAL_IP']
     elif 'REMOTE_ADDRESS' in request.META:
       ip = request.META['REMOTE_ADDRESS']
+    elif 'HTTP_X_FORWARDED_FOR' in request.META:
+      ip = request.META['HTTP_X_FORWARDED_FOR'].partition(',')[0]
     else:
       ip = None
     report_country = geoip.country_code(ip)
-  except (GeoIP2Exception, GeoIP2Error) as e:
+  except (GeoIP2Exception, GeoIP2Error, TypeError) as e:
     report_country = 'ZZ' # Unknown according to ISO 3166-1993
 
   #TODO(andreia) configure web server to limit post size otherwise
