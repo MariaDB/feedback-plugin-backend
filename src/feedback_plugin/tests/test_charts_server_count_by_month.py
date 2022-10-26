@@ -28,8 +28,11 @@ class ComputeServerCount(TestCase):
     for i in range(len(SERVERS_PER_MONTH)):
       picked_servers = random.sample(servers, k=SERVERS_PER_MONTH[i])
       for server in picked_servers:
-        u = Upload(upload_time=times[i], server=server)
-        u.save()
+        for j in range(UPLOADS_PER_MONTH_PER_SERVER):
+          u = Upload(
+                upload_time=times[i] + timedelta(days=random.randint(-3, 3)),
+                server=server)
+          u.save()
 
     self.assertEqual(compute_server_count_by_month(times[-1], times[0]),
                      {
