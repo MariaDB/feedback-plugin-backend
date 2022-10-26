@@ -3,3 +3,5 @@ django_countries==7.3.2
 geoip2==4.6.0
 mysqlclient==2.1.0
 PyYAML==6.0
+pygments
+sqlparse
