@@ -12,8 +12,6 @@ class TestComputeVersion(TestCase):
     time2 = time1 - timedelta(seconds=3600)
     u1 = Upload(upload_time=time1, server=s1)
     u2 = Upload(upload_time=time2, server=s1)
-    #Data(key='FEEDBACK_SERVER_UID', value='s1', upload=u1)
-    #Data(key='FEEDBACK_SERVER_UID', value='s1', upload=u2)
     d1 = Data(key='VERSION', value='10.6.4-MariaDB', upload=u1)
     d2 = Data(key='VERSION', value='10.6.4-MariaDB', upload=u2)
 
@@ -33,12 +31,6 @@ class TestComputeVersion(TestCase):
     d4.save()
 
     compute_upload_facts(time2, time1)
-
-    # self.assertEqual(ComputedUploadFact.objects.filter(name='version_major', value='10').count(), 2)
-    # self.assertEqual(ComputedUploadFact.objects.filter(name='version_minor', value='6').count(), 2)
-    # self.assertEqual(ComputedUploadFact.objects.filter(name='version_point', value='4').count(), 2)
-
-
 
     self.assertEqual(ComputedUploadFact.objects.filter(key='version_major', value='10').count(), 3)
     self.assertEqual(ComputedUploadFact.objects.filter(key='version_minor', value='6').count(), 3)
