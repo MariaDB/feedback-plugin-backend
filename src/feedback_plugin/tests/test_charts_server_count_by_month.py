@@ -30,15 +30,55 @@ class ComputeServerCount(TestCase):
       for server in picked_servers:
         for j in range(UPLOADS_PER_MONTH_PER_SERVER):
           u = Upload(
-                upload_time=times[i] + timedelta(days=random.randint(-3, 3)),
+                upload_time=times[i] + timedelta(days=random.randint(1, 5)),
                 server=server)
           u.save()
 
-    self.assertEqual(compute_server_count_by_month(times[-1], times[0]),
+    # Test with a time interval over the random value introduced above.
+    self.assertEqual(compute_server_count_by_month(times[-1],
+                                                   times[0] + timedelta(days=6),
+                                                   True),
                      {
                        'x': ['2021-11', '2021-12', '2022-01', '2022-02'],
                        'y': [1, 2, 3, 4]
                      })
 
+    self.assertEqual(compute_server_count_by_month(times[-2],
+                                                   times[0] + timedelta(days=6),
+                                                   True),
+                     {
+                       'x': ['2021-12', '2022-01', '2022-02'],
+                       'y': [2, 3, 4]
+                     })
+    self.assertEqual(compute_server_count_by_month(times[-2],
+                                                   times[1] + timedelta(days=6),
+                                                   True),
+                     {
+                       'x': ['2021-12', '2022-01'],
+                       'y': [2, 3]
+                     })
+
+    s_edge = Server()
+    s_edge.save()
+
+    first_upload_time = datetime(year=2022, month=5, day=2, hour=10,
+                                 minute=10, tzinfo=timezone.utc)
+    second_upload_time = datetime(year=2022, month=6, day=2, hour=10,
+                                 minute=10, tzinfo=timezone.utc)
+    Upload(upload_time=first_upload_time, server=s_edge).save()
+    Upload(upload_time=second_upload_time, server=s_edge).save()
 
 
+    self.assertEqual(compute_server_count_by_month(first_upload_time,
+                                                   second_upload_time, False),
+                     {
+                       'x': ['2022-06'],
+                       'y': [1]
+                     })
+
+    self.assertEqual(compute_server_count_by_month(first_upload_time,
+                                                   second_upload_time, True),
+                     {
+                       'x': ['2022-05', '2022-06'],
+                       'y': [1, 1]
+                     })
