@@ -26,6 +26,7 @@ from django.db.models.functions import (Cast, ExtractYear, ExtractMonth,
 from django.http.response import (HttpResponse, HttpResponseNotAllowed,
                                   HttpResponseBadRequest, JsonResponse)
 from django.contrib.gis.geoip2 import GeoIP2, GeoIP2Exception
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 
@@ -39,6 +40,24 @@ from .forms import UploadFileForm
 from feedback_plugin.models import *
 
 logger = logging.getLogger('views')
+
+class ChartView(View):
+  chart_id = None
+  def get(self, request, *args, **kwargs):
+
+    try:
+      chart = Chart.objects.select_related('metadata').get(id=self.chart_id)
+    except Chart.DoesNotExist:
+      return JsonResponse({}) #No data
+
+
+    return JsonResponse({
+      'title' : chart.title,
+      'values' : chart.values,
+      'metadata' : chart.metadata
+    })
+
+
 
 def feedback_server_count(request):
   query = Upload.objects.annotate(

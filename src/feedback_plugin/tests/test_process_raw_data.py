@@ -50,25 +50,25 @@ class ProcessRawData(TestCase):
     self.assertEqual(Data.objects.all().count(), 9)
     self.assertEqual(RawData.objects.all().count(), 0)
 
-    self.assertEqual(ComputedServerFact.objects.filter(name='uid').count(), 2)
-    self.assertEqual(ComputedServerFact.objects.filter(name='first_seen').count(), 2)
-    self.assertEqual(ComputedServerFact.objects.filter(name='last_seen').count(), 2)
-    self.assertEqual(ComputedServerFact.objects.filter(name='country_code').count(), 2)
+    self.assertEqual(ComputedServerFact.objects.filter(key='uid').count(), 2)
+    self.assertEqual(ComputedServerFact.objects.filter(key='first_seen').count(), 2)
+    self.assertEqual(ComputedServerFact.objects.filter(key='last_seen').count(), 2)
+    self.assertEqual(ComputedServerFact.objects.filter(key='country_code').count(), 2)
 
     self.assertEqual(ComputedServerFact.objects.
-                       filter(name='first_seen', server_id=s1.id)[0].value,
+                       filter(key='first_seen', server_id=s1.id)[0].value,
                        '2022-01-02 10:10:00+00:00')
     self.assertEqual(ComputedServerFact.objects.
-                       filter(name='last_seen', server_id=s1.id)[0].value,
+                       filter(key='last_seen', server_id=s1.id)[0].value,
                        '2022-01-05 10:15:00+00:00')
     self.assertEqual(ComputedServerFact.objects.
-                       filter(name='uid', server_id=s1.id)[0].value,
+                       filter(key='uid', server_id=s1.id)[0].value,
                        'hLHc4QZlbY1khIQIFF1T7A6tj04=')
     self.assertEqual(ComputedServerFact.objects.
-                       filter(name='uid', server_id=s2.id)[0].value,
+                       filter(key='uid', server_id=s2.id)[0].value,
                        'AABBCCDD=')
     self.assertEqual(ComputedServerFact.objects.
-                       filter(name='country_code', server_id=s2.id)[0].value,
+                       filter(key='country_code', server_id=s2.id)[0].value,
                        'UA')
 
   def test_load_fixtures(self):

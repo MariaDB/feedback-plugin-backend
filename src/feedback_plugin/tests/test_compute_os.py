@@ -124,63 +124,63 @@ class ComputeOS(TestCase):
         # Server 1 expected results
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s1,
-                            name='hardware_architecture').value,
+                            key='hardware_architecture').value,
                           'x86_64')
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s1,
-                            name='operating_system').value,
+                            key='operating_system').value,
                           'Linux')
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s1,
-                            name='operating_system_version').value,
+                            key='operating_system_version').value,
                           'unknown')
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s1,
-                            name='distribution').value,
+                            key='distribution').value,
                           'Gentoo')
 
         # Server 2 expected results
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s2,
-                            name='hardware_architecture').value,
+                            key='hardware_architecture').value,
                           'x86')
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s2,
-                            name='operating_system').value,
+                            key='operating_system').value,
                           'Windows')
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s2,
-                            name='operating_system_version').value,
+                            key='operating_system_version').value,
                           'unknown')
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s2,
-                            name='distribution').value,
+                            key='distribution').value,
                           'CentOS')
 
         # Server 3 expected results
         with self.assertRaises(ComputedServerFact.DoesNotExist):
-          ComputedServerFact.objects.get(server=s3,name='VERSION').value
+          ComputedServerFact.objects.get(server=s3,key='VERSION').value
 
 
         # Server 4 expected results
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s4,
-                            name='hardware_architecture').value,
+                            key='hardware_architecture').value,
                           'x86_64')
         # Server 5 expected results
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s5,
-                            name='operating_system').value,
+                            key='operating_system').value,
                           'Linux')
         # Server 6 expected results
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s6,
-                            name='operating_system_version').value,
+                            key='operating_system_version').value,
                           'unknown')
         # Server 7 expected results
         self.assertEqual(ComputedServerFact.objects.get(
                             server=s7,
-                            name='distribution').value,
+                            key='distribution').value,
                           'Gentoo')
 
     # Test first insert
@@ -204,21 +204,21 @@ class ComputeOS(TestCase):
     servers = Server.objects.all()
 
     extracted_facts= ComputedServerFact.objects.filter(
-            name__in= ['operating_system', 'hardware_architecture',
+            key__in= ['operating_system', 'hardware_architecture',
                        'distribution', 'operating_system_version'])
 
     #print(extracted_facts)
     # One fact for each server.
     self.assertEqual(servers.count(), 5)
-    self.assertEqual(extracted_facts.filter(name='operating_system',
+    self.assertEqual(extracted_facts.filter(key='operating_system',
                                             value='Windows').count(), 4)
-    self.assertEqual(extracted_facts.filter(name='operating_system_version',
+    self.assertEqual(extracted_facts.filter(key='operating_system_version',
                                             value__icontains='windows').count(), 4)
-    self.assertEqual(extracted_facts.filter(name='operating_system',
+    self.assertEqual(extracted_facts.filter(key='operating_system',
                                             value='Linux').count(),1)
-    self.assertEqual(extracted_facts.filter(name='distribution',
+    self.assertEqual(extracted_facts.filter(key='distribution',
                                             value='CentOS').count(), 1)
-    self.assertEqual(extracted_facts.filter(name='operating_system_version',
+    self.assertEqual(extracted_facts.filter(key='operating_system_version',
                                             value='8.2.2004 (core)').count(), 1)
 
 

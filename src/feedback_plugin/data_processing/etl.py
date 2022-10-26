@@ -37,11 +37,11 @@ def process_raw_data():
 
     uid = data['FEEDBACK_SERVER_UID']
     try:
-      srv_uid_fact = ComputedServerFact.objects.get(name='uid', value=uid)
+      srv_uid_fact = ComputedServerFact.objects.get(key='uid', value=uid)
       server = Server.objects.get(id=srv_uid_fact.server.id)
     except ComputedServerFact.DoesNotExist:
       server = Server()
-      srv_uid_fact = ComputedServerFact(name='uid',
+      srv_uid_fact = ComputedServerFact(key='uid',
                                         value=uid,
                                         server=server)
       server.save()
@@ -53,18 +53,18 @@ def process_raw_data():
       assert(0)
 
     srv_facts = []
-    def get_fact_by_name(name, server, value):
+    def get_fact_by_key(key, server, value):
       try:
-        srv_fact = ComputedServerFact.objects.get(name=name,
+        srv_fact = ComputedServerFact.objects.get(key=key,
                                                   server__id=server.id)
         srv_fact.value = value
         return (False, srv_fact)
       except ComputedServerFact.DoesNotExist:
-        return (True, ComputedServerFact(name=name, value=value, server=server))
+        return (True, ComputedServerFact(key=key, value=value, server=server))
 
-    srv_facts.append(get_fact_by_name('country_code', server, country_code))
-    srv_facts.append(get_fact_by_name('last_seen', server, raw_upload_time))
-    srv_facts.append(get_fact_by_name('first_seen', server, raw_upload_time))
+    srv_facts.append(get_fact_by_key('country_code', server, country_code))
+    srv_facts.append(get_fact_by_key('last_seen', server, raw_upload_time))
+    srv_facts.append(get_fact_by_key('first_seen', server, raw_upload_time))
     # If first_seen already existed, we don't override it.
     if (srv_facts[-1][0] == False):
       srv_facts.pop()
@@ -105,15 +105,15 @@ def compute_upload_facts(start_date, end_date):
       version_dict[data.upload_id] = {}
 
     version_dict[data.upload_id]['major'] = ComputedUploadFact(
-                         name='version_major',
+                         key='version_major',
                          value=matches.group('major'),
                          upload=data.upload)
     version_dict[data.upload_id]['minor'] = ComputedUploadFact(
-                         name='version_minor',
+                         key='version_minor',
                          value=matches.group('minor'),
                          upload=data.upload)
     version_dict[data.upload_id]['point'] = ComputedUploadFact(
-                         name='version_point',
+                         key='version_point',
                          value=matches.group('point'),
                          upload=data.upload)
 
@@ -175,13 +175,13 @@ def extract_server_facts(start_date, end_date, data_extractors):
     # unique.
     #
     # TODO(cvicentiu) This could be optimized by creating a unique key
-    # for each ComputedServerFact (server_id, name) and relying on
+    # for each ComputedServerFact (server_id, key) and relying on
     # the database to "ignore" updates.
     # This optimization only works for server facts that do not change
     # over the lifespan of the server.
     facts_already_in_db = (ComputedServerFact.objects
         .filter(server__id__in=servers_with_computed_fact,
-                name=key))
+                key=key))
 
     facts_in_db_by_s_id = {}
     for fact in facts_already_in_db:
@@ -199,7 +199,7 @@ def extract_server_facts(start_date, end_date, data_extractors):
         facts_in_db_by_s_id[s_id].value = fact_value
         facts_update.append(facts_in_db_by_s_id[s_id])
       else:
-        computed_fact = ComputedServerFact(name=key, value=fact_value,
+        computed_fact = ComputedServerFact(key=key, value=fact_value,
                                            server_id=s_id)
         facts_create.append(computed_fact)
 
@@ -212,9 +212,9 @@ def extract_server_facts(start_date, end_date, data_extractors):
 # TODO: Not used atm
 def add_os_srv_fact_if_missing(start_date, end_date):
 
-  # Get the server list where the OS name exists
+  # Get the server list where the OS key exists
   servers_with_os = ComputedServerFact.objects.filter(
-                      name='os_name').values_list(
+                      key='os_name').values_list(
                       'server_id',
                       flat=True)
   #print('srv_with_os', servers_with_os)
@@ -226,7 +226,7 @@ def add_os_srv_fact_if_missing(start_date, end_date):
   for srv in servers_to_process:
 
     fact = ComputedServerFact(server=srv,
-                      name='os_name',
+                      key='os_name',
                       value='Linux')
     update_list.append(fact)
 

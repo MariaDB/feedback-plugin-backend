@@ -84,7 +84,7 @@ class ComputedUploadFact(models.Model):
     on_delete=models.PROTECT,
     db_column='upload_id'
   )
-  name = models.CharField(max_length=100)
+  key = models.CharField(max_length=100)
   value = models.CharField(max_length=1000)
 
 
@@ -96,28 +96,31 @@ class ComputedServerFact(models.Model):
     on_delete=models.PROTECT,
     db_column='server_id'
   )
-  name = models.CharField(max_length=100)
+  key = models.CharField(max_length=100)
   value = models.CharField(max_length=1000)
 
   def __str__(self):
     return f'{self.server.id} -> {self.name} = {self.value}'
 
 
-class Charts(models.Model):
+class Chart(models.Model):
   '''
     This table holds the pre-computed feedback plugin data used for charts
     generation.
   '''
-  chart_id = models.SlugField(max_length=100)
-  name = models.CharField(max_length=100)
-  results = models.JSONField(default=dict, blank=True, null=False)
-  start_date = models.DateTimeField(blank=True, null=True)
-  end_date = models.DateTimeField(blank=True, null=True)
-  next_update = models.DateTimeField(blank=True, null=True)
+  id = models.SlugField(max_length=100, primary_key=True)
+  title = models.CharField(max_length=250) #Pretty title
+  values = models.JSONField(default=dict, blank=True, null=False)
 
 
   class Meta:
     verbose_name_plural = "Feedback Plugin Chart Results"
 
   def __str__(self):
-    return self.name
+    return self.title
+
+class ChartMetadata(models.Model):
+  chart = models.OneToOneField('Chart', primary_key=True, on_delete=models.CASCADE,
+                               related_name='metadata')
+  computed_start_date = models.DateTimeField(blank=True, null=True)
+  computed_end_date = models.DateTimeField(blank=True, null=True)

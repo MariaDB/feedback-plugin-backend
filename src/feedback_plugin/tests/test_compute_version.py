@@ -40,7 +40,7 @@ class TestComputeVersion(TestCase):
 
 
 
-    self.assertEqual(ComputedUploadFact.objects.filter(name='version_major', value='10').count(), 3)
-    self.assertEqual(ComputedUploadFact.objects.filter(name='version_minor', value='6').count(), 3)
-    self.assertEqual(ComputedUploadFact.objects.filter(name='version_point', value='4').count(), 3)
+    self.assertEqual(ComputedUploadFact.objects.filter(key='version_major', value='10').count(), 3)
+    self.assertEqual(ComputedUploadFact.objects.filter(key='version_minor', value='6').count(), 3)
+    self.assertEqual(ComputedUploadFact.objects.filter(key='version_point', value='4').count(), 3)
 

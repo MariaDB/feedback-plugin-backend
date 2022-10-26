@@ -20,8 +20,8 @@ from feedback_plugin import views
 urlpatterns = [
    path('admin/', admin.site.urls),
 
-   path('rest/v1/server-count/', views.feedback_server_count,
-                              name='server_count'),
+   path('rest/v1/server-count/',views.ChartView.as_view(chart_id='server-count'),
+                                name='server_count'),
    path('rest/v1/version-breakdown/', views.feedback_version_breakdown,
                                       name='version_breakdown'),
    path('rest/v1/architecture/', views.feedback_architecture,
