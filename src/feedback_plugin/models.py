@@ -85,7 +85,7 @@ class ComputedUploadFact(models.Model):
     db_column='upload_id'
   )
   name = models.CharField(max_length=100)
-  value = models.CharField(max_length=100)
+  value = models.CharField(max_length=1000)
 
 
 class ComputedServerFact(models.Model):
@@ -97,7 +97,7 @@ class ComputedServerFact(models.Model):
     db_column='server_id'
   )
   name = models.CharField(max_length=100)
-  value = models.CharField(max_length=100)
+  value = models.CharField(max_length=1000)
 
   def __str__(self):
     return f'{self.server.id} -> {self.name} = {self.value}'
