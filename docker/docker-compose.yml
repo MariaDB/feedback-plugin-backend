@@ -14,8 +14,8 @@ services:
       - DJANGO_DB_USER_NAME
       - DJANGO_DB_USER_PASSWORD
     volumes:
-      - ${MARIADB_DATADIR}:/var/lib/mysql
-      - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d
+      - ${MARIADB_DATADIR}:/var/lib/mysql:Z
+      - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d:Z
   web:
     build:
       context: ../
@@ -37,8 +37,8 @@ services:
                       --reload
     volumes:
       # nginx serves the apps static files, share volume
-      - static_volume:/app/src/staticfiles
-      - ../src/:/app/src/
+      - static_volume:/app/src/staticfiles:Z
+      - ../src/:/app/src/:Z
     depends_on:
       - db
 
@@ -49,7 +49,7 @@ services:
         nginx_version: "${NGINX_VERSION}"
     restart: always
     volumes:
-      - static_volume:/home/app/web/staticfiles
+      - static_volume:/home/app/web/staticfiles:Z
     ports:
       - 8000:80
     depends_on:
