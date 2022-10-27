@@ -124,3 +124,6 @@ class ChartMetadata(models.Model):
                                related_name='metadata')
   computed_start_date = models.DateTimeField(blank=True, null=True)
   computed_end_date = models.DateTimeField(blank=True, null=True)
+
+  def __str__(self):
+      return f'{self.computed_start_date}, {self.computed_end_date}'
