@@ -203,9 +203,9 @@ class ComputeOS(TestCase):
 
     servers = Server.objects.all()
 
-    extracted_facts= ComputedServerFact.objects.filter(
-            key__in= ['operating_system', 'hardware_architecture',
-                       'distribution', 'operating_system_version'])
+    extracted_facts = ComputedServerFact.objects.filter(
+        key__in= ['operating_system', 'hardware_architecture',
+                  'distribution', 'operating_system_version'])
 
     #print(extracted_facts)
     # One fact for each server.

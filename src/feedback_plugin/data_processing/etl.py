@@ -125,7 +125,8 @@ def compute_upload_facts(start_date, end_date):
   ComputedUploadFact.objects.bulk_create(version_facts, batch_size=1000)
 
 
-def extract_server_facts(start_date, end_date, data_extractors):
+def get_upload_data_for_data_extractors(start_date, end_date,
+                                        data_extractors):
   keys = []
   for extractor in data_extractors:
     keys = keys + extractor.get_required_keys()
@@ -150,6 +151,13 @@ def extract_server_facts(start_date, end_date, data_extractors):
     # Appending to a list allows for multiple values for the same key.
     servers[server_id][upload_id][data.key.lower()].append(data.value)
 
+  return servers
+
+
+
+def extract_server_facts(start_date, end_date, data_extractors):
+  servers = get_upload_data_for_data_extractors(start_date, end_date,
+                                                data_extractors)
   facts = defaultdict(dict)
   for extractor in data_extractors:
     new_facts = extractor.extract_facts(servers)

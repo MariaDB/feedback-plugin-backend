@@ -69,8 +69,8 @@ class Command(BaseCommand):
     def compute_server_count_by_month(force_recreate : bool):
         (chart, metadata,
          start_date, end_date,
-         start_closed_interval) = Command.get_computation_object('server-count',
-                                                                 force_recreate)
+         start_closed_interval
+        ) = Command.get_computation_object('server-count', force_recreate)
 
         data = charts.compute_server_count_by_month(start_date, end_date,
                                                     start_closed_interval)
