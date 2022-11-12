@@ -159,7 +159,7 @@ class ComputeOS(TestCase):
 
         # Server 3 expected results
         with self.assertRaises(ComputedServerFact.DoesNotExist):
-          ComputedServerFact.objects.get(server=s3,key='VERSION').value
+          ComputedServerFact.objects.get(server=s3, key='VERSION').value
 
 
         # Server 4 expected results

@@ -37,8 +37,8 @@ class ComputeChartsCommand(TestCase):
         first_upload = Upload.objects.all().order_by('upload_time')[:1][0]
         last_upload = Upload.objects.all().order_by('-upload_time')[:1][0]
 
-        self.assertEqual(Chart.objects.all().count(), 1)
-        self.assertEqual(ChartMetadata.objects.all().count(), 1)
+        self.assertEqual(Chart.objects.all().count(), 2)
+        self.assertEqual(ChartMetadata.objects.all().count(), 2)
 
         chart = Chart.objects.get(id='server-count')
         self.assertEqual(chart.title, 'Server Count by Month')

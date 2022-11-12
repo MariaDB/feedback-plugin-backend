@@ -82,11 +82,26 @@ class Command(BaseCommand):
         chart.save()
         metadata.save()
 
+    @staticmethod
+    def compute_version_breakdown_by_month(force_recreate : bool):
+        (chart, metadata,
+         start_date, end_date,
+         start_closed_interval
+        ) = Command.get_computation_object('version-breakdown', force_recreate)
+
+        data = charts.compute_version_breakdown_by_month(start_date, end_date,
+                                                         start_closed_interval)
+        chart.title = 'Version Breakdown by Month'
+        chart.values = Command.merge_chart_data(chart.values, data)
+
+        chart.save()
+        metadata.save()
 
 
     def handle(self, *args, **options):
         try:
             Command.compute_server_count_by_month(options['recreate'])
+            Command.compute_version_breakdown_by_month(options['recreate'])
         except DatabaseHasNoUploads:
             raise CommandError('No uploads, can not compute charts!')
 

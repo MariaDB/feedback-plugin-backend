@@ -217,6 +217,47 @@ def extract_server_facts(start_date, end_date, data_extractors):
                                            batch_size=1000)
 
 
+def check_if_upload_fact_exists(key : str, upload_id : int):
+    try:
+        ComputedUploadFact.objects.get(key=key, upload_id=upload_id)
+    except ComputedUploadFact.DoesNotExist:
+        return False
+    return True
+
+
+def extract_upload_facts(start_date, end_date, data_extractors):
+    servers = get_upload_data_for_data_extractors(start_date, end_date,
+                                                  data_extractors)
+
+    facts = defaultdict(dict)
+    for extractor in data_extractors:
+        new_facts = extractor.extract_facts(servers)
+        for s_id in new_facts:
+            facts[s_id].update(new_facts[s_id])
+
+    facts_create = []
+    facts_update = []
+    for s_id in facts:
+        for upload_id in facts[s_id]:
+            for key in facts[s_id][upload_id]:
+                fact_value = facts[s_id][upload_id][key]
+                up_fact = ComputedUploadFact(key=key, value=fact_value,
+                                             upload_id=upload_id)
+
+                #TODO(cvicentiu) This is a rather slow check, it does one database
+                # lookup per upload_id. This should be optimized for faster
+                # processing.
+                if check_if_upload_fact_exists(key, upload_id):
+                    facts_update.append(up_fact)
+                else:
+                    facts_create.append(up_fact)
+
+    ComputedUploadFact.objects.bulk_create(facts_create, batch_size=1000)
+    ComputedUploadFact.objects.bulk_update(facts_update, ['value'],
+                                           batch_size=1000)
+
+
+
 # TODO: Not used atm
 def add_os_srv_fact_if_missing(start_date, end_date):
 

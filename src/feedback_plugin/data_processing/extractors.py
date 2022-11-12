@@ -129,3 +129,40 @@ class ArchitectureExtractor(DataExtractor):
 
       result[server_id] = facts
     return result
+
+
+class ServerVersionExtractor(DataExtractor):
+    @staticmethod
+    def extract_server_version(upload):
+        if 'version' not in upload or len(upload['version']) == 0:
+            return None
+        pattern = re.compile('(?P<major>\d+).(?P<minor>\d+).(?P<point>\d+)')
+
+        # We always take the last entry from a CSV if there happen to be
+        # duplicates.
+        matches = pattern.match(upload['version'][-1])
+
+        result = {
+            'server_version_major' : matches.group('major'),
+            'server_version_minor' : matches.group('minor'),
+            'server_version_point' : matches.group('point'),
+        }
+
+        #TODO(cvicentiu) handle invalid version
+
+        return result
+
+    def get_required_keys(self):
+        return ['version']
+
+    def extract_facts(self, servers):
+        result = {}
+        for server_id, server_uploads in servers.items():
+            facts = {}
+            for upload_id, upload in server_uploads.items():
+                fact = ServerVersionExtractor.extract_server_version(upload)
+                if fact is None:
+                    continue
+                facts[upload_id] = fact
+            result[server_id] = facts
+        return result

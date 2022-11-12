@@ -36,3 +36,14 @@ def compute_server_count_by_month(start_date: datetime,
         'x': [f"{value['year']}-{value['month']:0>2}" for value in server_counts],
         'y': [int(f"{value['count']}") for value in server_counts]
     }
+
+def compute_version_breakdown_by_month(start_date: datetime,
+                                       end_date: datetime,
+                                       start_closed_interval: bool
+) -> dict[str, list[str]]:
+
+    #TODO(cvicentiu) Implement this
+    return {
+        'x' : [],
+        'y' : []
+    }
