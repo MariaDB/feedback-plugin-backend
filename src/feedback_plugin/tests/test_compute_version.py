@@ -47,6 +47,22 @@ class TestComputeVersion(TestCase):
         begin = datetime(year=2022, month=1, day=1, tzinfo=timezone.utc)
         end = datetime(year=2022, month=3, day=1, tzinfo=timezone.utc)
 
+        # 8 Uploads in test database
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_major', value='10').count(), 8)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_minor', value='1').count(), 1)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_minor', value='3').count(), 3)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_minor', value='4').count(), 4)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_point', value='25').count(), 3)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_point', value='22').count(), 1)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_point', value='6').count(), 1)
+
+        # Test update
         extract_upload_facts(begin, end, [ServerVersionExtractor()])
 
-        print(ComputedUploadFact.objects.filter())
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_major', value='10').count(), 8)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_minor', value='1').count(), 1)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_minor', value='3').count(), 3)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_minor', value='4').count(), 4)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_point', value='25').count(), 3)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_point', value='22').count(), 1)
+        self.assertEqual(ComputedUploadFact.objects.filter(key='server_version_point', value='6').count(), 1)
