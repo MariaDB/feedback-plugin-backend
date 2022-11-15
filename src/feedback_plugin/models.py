@@ -87,6 +87,9 @@ class ComputedUploadFact(models.Model):
   key = models.CharField(max_length=100)
   value = models.CharField(max_length=1000)
 
+  def __str__(self):
+   return f'{self.upload.id} : S{self.upload.server_id} -> {self.key} = {self.value}'
+
 
 class ComputedServerFact(models.Model):
   '''
@@ -100,7 +103,7 @@ class ComputedServerFact(models.Model):
   value = models.CharField(max_length=1000)
 
   def __str__(self):
-    return f'{self.server.id} -> {self.name} = {self.value}'
+    return f'{self.server_id} -> {self.key} = {self.value}'
 
 
 class Chart(models.Model):
