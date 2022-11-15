@@ -2,8 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from django.test import TestCase, Client
 
-from feedback_plugin.data_processing.etl import (extract_server_facts,
-                                                 add_os_srv_fact_if_missing)
+from feedback_plugin.data_processing.etl import extract_server_facts
 from feedback_plugin.tests.utils import create_test_database
 from feedback_plugin.data_processing.extractors import ArchitectureExtractor
 from feedback_plugin.models import Data, Upload, Server, ComputedServerFact
@@ -207,7 +206,6 @@ class ComputeOS(TestCase):
         key__in= ['operating_system', 'hardware_architecture',
                   'distribution', 'operating_system_version'])
 
-    #print(extracted_facts)
     # One fact for each server.
     self.assertEqual(servers.count(), 5)
     self.assertEqual(extracted_facts.filter(key='operating_system',

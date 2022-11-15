@@ -8,7 +8,6 @@ from feedback_plugin.models import Server, Upload
 
 class ComputeServerCount(TestCase):
   def test_basic(self):
-
     TOTAL_SERVERS = 9
     SERVERS_PER_MONTH = [4, 3, 2, 1]
     UPLOADS_PER_MONTH_PER_SERVER = 5
