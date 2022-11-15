@@ -127,9 +127,9 @@ def compute_upload_facts(start_date, end_date):
 
 def get_upload_data_for_data_extractors(start_date, end_date,
                                         data_extractors):
-  keys = []
+  keys = set()
   for extractor in data_extractors:
-    keys = keys + extractor.get_required_keys()
+    keys |= extractor.get_required_keys()
   key_filter = Q()
   for key in keys:
     key_filter |= Q(key__iexact=key)

@@ -7,7 +7,9 @@ from pathlib import Path
 import yaml
 
 from feedback_plugin.models import RawData
-from feedback_plugin.data_processing.etl import process_raw_data
+from feedback_plugin.data_processing import etl
+from feedback_plugin.data_processing.extractors import AllServerFactExtractor
+from feedback_plugin.data_processing.extractors import AllUploadFactExtractor
 
 def load_test_data(test_data_path):
     with open(os.path.join(test_data_path, 'metadata.yml'), 'r') as f:
@@ -45,5 +47,13 @@ def create_test_database(test_data_path=os.path.join(Path(__file__).parent,
                     data=upload['data'],
                     upload_time=upload['time'])
         d.save()
-    process_raw_data()
+    etl.process_raw_data()
+
+    #TODO(cvicentiu) process_raw_data should return these 2 values, based on what
+    # it processed.
+    start_date = datetime(year=2021, month=1, day=1, tzinfo=timezone.utc)
+    end_date = datetime(year=2023, month=1, day=1, tzinfo=timezone.utc)
+
+    etl.extract_server_facts(start_date, end_date, [AllServerFactExtractor()])
+    etl.extract_upload_facts(start_date, end_date, [AllUploadFactExtractor()])
 

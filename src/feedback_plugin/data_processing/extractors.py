@@ -1,16 +1,31 @@
+from abc import ABC, abstractmethod
+
+from collections import defaultdict
+import inspect
 import re
+import sys
 
-class DataExtractor(object):
-  def extract_facts(data_dict):
-    result = []
-    return result
+class DataExtractor(ABC):
+    @abstractmethod
+    def get_required_keys(self):
+        pass
+
+    @abstractmethod
+    def extract_facts(self, data_dict):
+        pass
 
 
-class ArchitectureExtractor(DataExtractor):
+class UploadFactExtractor(DataExtractor):
+    pass
+
+class ServerFactExtractor(DataExtractor):
+    pass
+
+class ArchitectureExtractor(ServerFactExtractor):
 
   def get_required_keys(self):
-    return ['uname_machine', 'uname_sysname', 'uname_version',
-            'uname_distribution', 'uname_release']
+    return {'uname_machine', 'uname_sysname', 'uname_version',
+            'uname_distribution', 'uname_release'}
 
   @staticmethod
   def extract_distribution(upload):
@@ -131,7 +146,7 @@ class ArchitectureExtractor(DataExtractor):
     return result
 
 
-class ServerVersionExtractor(DataExtractor):
+class ServerVersionExtractor(UploadFactExtractor):
     @staticmethod
     def extract_server_version(upload):
         if 'version' not in upload or len(upload['version']) == 0:
@@ -153,7 +168,7 @@ class ServerVersionExtractor(DataExtractor):
         return result
 
     def get_required_keys(self):
-        return ['version']
+        return {'version'}
 
     def extract_facts(self, servers):
         result = {}
@@ -166,3 +181,43 @@ class ServerVersionExtractor(DataExtractor):
                 facts[upload_id] = fact
             result[server_id] = facts
         return result
+
+
+class AllFactExtractor(DataExtractor):
+    def __init__(self, class_type: type):
+        current_module = sys.modules[__name__]
+
+        def class_filter(member):
+            if (inspect.isclass(member)
+                    and issubclass(member, class_type)
+                    and member is not class_type):
+                return True
+            return False
+
+        cls_members = inspect.getmembers(sys.modules[__name__], class_filter)
+
+        self.extractors = []
+        for cls_member in cls_members:
+            self.extractors.append(cls_member[1]())
+
+    def extract_facts(self, data_dict):
+        facts = defaultdict(dict)
+        for extractor in self.extractors:
+            new_facts = extractor.extract_facts(data_dict)
+            for s_id in new_facts:
+                facts[s_id].update(new_facts[s_id])
+        return facts
+
+    def get_required_keys(self):
+        result = set()
+        for extractor in self.extractors:
+            result |= extractor.get_required_keys()
+        return result
+
+class AllUploadFactExtractor(AllFactExtractor):
+    def __init__(self):
+        super().__init__(UploadFactExtractor)
+
+class AllServerFactExtractor(AllFactExtractor):
+    def __init__(self):
+        super().__init__(ServerFactExtractor)
