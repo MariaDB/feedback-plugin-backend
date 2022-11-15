@@ -11,9 +11,21 @@ from sql_utils.utils import print_sql
 class DatabaseHasNoUploads(Exception):
     pass
 
+CHARTS_MAP = {
+        'server-count' : {
+            'callback' : charts.compute_server_count_by_month,
+            'title' : 'Server Count by Month',
+        },
+        'version-breakdown-by-month' : {
+            'callback' : charts.compute_version_breakdown_by_month,
+            'title' : 'Server Version Breakdown by Month',
+        },
+}
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--recreate', action='store_true')
+        parser.add_argument('--chart', default='all')
 
     @staticmethod
     def get_computation_object(chart_id : str, force_recreate : bool):
@@ -36,7 +48,7 @@ class Command(BaseCommand):
         metadata = chart.metadata
 
         if force_recreate:
-            chart.values = {'x': [], 'y' : []}
+            chart.values = {}
             start_date = first_upload.get().upload_time
             metadata.computed_start_date = start_date
             start_closed_interval = True
@@ -50,9 +62,29 @@ class Command(BaseCommand):
 
 
     @staticmethod
+    def merge_multi_series_chart_data(chart_values : dict[str, dict[str, list]],
+                                      new_data : dict[str, dict[str, list]]
+    ) -> dict[str, dict[str, list]]:
+        result = {}
+        for series in chart_values:
+            new_data_series = {}
+            if series in new_data:
+                new_data_series = new_data[series]
+
+            result[series] = Command.merge_chart_data(chart_values[series],
+                                                      new_data_series)
+        for series in new_data:
+            if series not in result:
+                result[series] = copy.deepcopy(new_data[series])
+        return result
+
+    @staticmethod
     def merge_chart_data(chart_values : dict[str, list],
                          new_data : dict[str, list]) -> dict[str, list]:
         result = copy.deepcopy(chart_values)
+
+        if 'x' not in new_data:
+            return result
 
         if len(result['x']) > 0 and result['x'][-1] == new_data['x'][0]:
             result['y'][-1] += new_data['y'][0]
@@ -64,44 +96,38 @@ class Command(BaseCommand):
 
         return result
 
-
     @staticmethod
-    def compute_server_count_by_month(force_recreate : bool):
+    def compute_chart(chart_id : str, title : str, callback, force_recreate : bool):
         (chart, metadata,
          start_date, end_date,
          start_closed_interval
-        ) = Command.get_computation_object('server-count', force_recreate)
+        ) = Command.get_computation_object(chart_id, force_recreate)
 
-        data = charts.compute_server_count_by_month(start_date, end_date,
-                                                    start_closed_interval)
+        data = callback(start_date, end_date, start_closed_interval)
 
-        chart.title = 'Server Count by Month'
+        chart.title = title
 
-        chart.values = Command.merge_chart_data(chart.values, data)
-
-        chart.save()
-        metadata.save()
-
-    @staticmethod
-    def compute_version_breakdown_by_month(force_recreate : bool):
-        (chart, metadata,
-         start_date, end_date,
-         start_closed_interval
-        ) = Command.get_computation_object('version-breakdown', force_recreate)
-
-        data = charts.compute_version_breakdown_by_month(start_date, end_date,
-                                                         start_closed_interval)
-        chart.title = 'Version Breakdown by Month'
-        chart.values = Command.merge_chart_data(chart.values, data)
+        chart.values = Command.merge_multi_series_chart_data(chart.values, data)
 
         chart.save()
         metadata.save()
-
 
     def handle(self, *args, **options):
         try:
-            Command.compute_server_count_by_month(options['recreate'])
-            Command.compute_version_breakdown_by_month(options['recreate'])
+            all = options['chart'] == 'all'
+            if not all:
+                if options['chart'] not in CHARTS_MAP:
+                    raise CommandError('Invalid chart id')
+
+                Command.compute_chart(options['chart'],
+                                      CHARTS_MAP[options['chart']]['title'],
+                                      CHARTS_MAP[options['chart']]['callback'],
+                                      options['recreate'])
+            else:
+                for chart_id in CHARTS_MAP:
+                    Command.compute_chart(chart_id,
+                                          CHARTS_MAP[chart_id]['title'],
+                                          CHARTS_MAP[chart_id]['callback'],
+                                          options['recreate'])
         except DatabaseHasNoUploads:
             raise CommandError('No uploads, can not compute charts!')
-

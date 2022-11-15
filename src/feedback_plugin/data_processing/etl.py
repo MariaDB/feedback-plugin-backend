@@ -219,10 +219,11 @@ def extract_server_facts(start_date, end_date, data_extractors):
 
 def check_if_upload_fact_exists(key : str, upload_id : int):
     try:
-        ComputedUploadFact.objects.get(key=key, upload_id=upload_id)
+        return ComputedUploadFact.objects.get(key=key, upload_id=upload_id)
     except ComputedUploadFact.DoesNotExist:
-        return False
-    return True
+        return None
+
+
 
 
 def extract_upload_facts(start_date, end_date, data_extractors):
@@ -241,16 +242,18 @@ def extract_upload_facts(start_date, end_date, data_extractors):
         for upload_id in facts[s_id]:
             for key in facts[s_id][upload_id]:
                 fact_value = facts[s_id][upload_id][key]
-                up_fact = ComputedUploadFact(key=key, value=fact_value,
-                                             upload_id=upload_id)
 
                 #TODO(cvicentiu) This is a rather slow check, it does one database
                 # lookup per upload_id. This should be optimized for faster
                 # processing.
-                if check_if_upload_fact_exists(key, upload_id):
-                    facts_update.append(up_fact)
-                else:
+                up_fact = check_if_upload_fact_exists(key, upload_id)
+                if up_fact is None:
+                    up_fact = ComputedUploadFact(key=key, value=fact_value,
+                                                 upload_id=upload_id)
                     facts_create.append(up_fact)
+                else:
+                    up_fact.value = fact_value
+                    facts_update.append(up_fact)
 
     ComputedUploadFact.objects.bulk_create(facts_create, batch_size=1000)
     ComputedUploadFact.objects.bulk_update(facts_update, ['value'],

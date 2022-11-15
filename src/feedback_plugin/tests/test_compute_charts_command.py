@@ -44,8 +44,10 @@ class ComputeChartsCommand(TestCase):
         self.assertEqual(chart.title, 'Server Count by Month')
         self.assertEqual(chart.values,
                          {
-                             'x': ['2022-01', '2022-02', '2022-03'],
-                             'y': [3, 4, 1]
+                             'count': {
+                                 'x': ['2022-01', '2022-02', '2022-03'],
+                                 'y': [3, 4, 1],
+                             }
                          })
         self.assertEqual(chart.metadata.computed_start_date,
                          first_upload.upload_time)
@@ -69,8 +71,10 @@ class ComputeChartsCommand(TestCase):
         self.assertEqual(chart.title, 'Server Count by Month')
         self.assertEqual(chart.values,
                          {
-                             'x': ['2022-01', '2022-02', '2022-03', '2022-04'],
-                             'y': [3, 4, 1, 1]
+                             'count': {
+                                 'x': ['2022-01', '2022-02', '2022-03', '2022-04'],
+                                 'y': [3, 4, 1, 1],
+                             }
                          })
         self.assertEqual(chart.metadata.computed_start_date,
                          first_upload.upload_time)
@@ -84,10 +88,38 @@ class ComputeChartsCommand(TestCase):
         self.assertEqual(chart.title, 'Server Count by Month')
         self.assertEqual(chart.values,
                          {
-                             'x': ['2021-12', '2022-01', '2022-02', '2022-03', '2022-04'],
-                             'y': [1, 3, 4, 1, 1]
+                             'count': {
+                                 'x': ['2021-12', '2022-01', '2022-02', '2022-03', '2022-04'],
+                                 'y': [1, 3, 4, 1, 1],
+                             }
                          })
         self.assertEqual(chart.metadata.computed_start_date,
                          new_first_upload.upload_time)
         self.assertEqual(chart.metadata.computed_end_date,
                          new_last_upload.upload_time)
+
+    def test_compute_version_breakdown_by_month(self):
+        create_test_database()
+
+        ComputeChartsCommand.call('--recreate', '--chart=version-breakdown-by-month')
+
+        self.assertEqual(Chart.objects.all().count(), 1)
+
+        chart = Chart.objects.get(id='version-breakdown-by-month')
+
+        self.assertEqual(chart.title, 'Server Version Breakdown by Month')
+        self.assertEqual(chart.values,
+                         {
+                             '10.1': {
+                                 'x': ['2022-2'],
+                                 'y': [1]
+                             },
+                             '10.3': {
+                                 'x': ['2022-1', '2022-2', '2022-3'],
+                                 'y': [1, 1, 1]
+                             },
+                             '10.4': {
+                                 'x': ['2022-1', '2022-2'],
+                                 'y': [2, 2]
+                             },
+                         })

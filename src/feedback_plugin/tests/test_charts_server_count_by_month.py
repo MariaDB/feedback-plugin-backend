@@ -39,23 +39,29 @@ class ComputeServerCount(TestCase):
                                                    times[0] + timedelta(days=6),
                                                    True),
                      {
-                       'x': ['2021-11', '2021-12', '2022-01', '2022-02'],
-                       'y': [1, 2, 3, 4]
+                         'count': {
+                             'x': ['2021-11', '2021-12', '2022-01', '2022-02'],
+                             'y': [1, 2, 3, 4],
+                         },
                      })
 
     self.assertEqual(compute_server_count_by_month(times[-2],
                                                    times[0] + timedelta(days=6),
                                                    True),
                      {
-                       'x': ['2021-12', '2022-01', '2022-02'],
-                       'y': [2, 3, 4]
+                         'count': {
+                             'x': ['2021-12', '2022-01', '2022-02'],
+                             'y': [2, 3, 4],
+                         },
                      })
     self.assertEqual(compute_server_count_by_month(times[-2],
                                                    times[1] + timedelta(days=6),
                                                    True),
                      {
-                       'x': ['2021-12', '2022-01'],
-                       'y': [2, 3]
+                         'count': {
+                             'x': ['2021-12', '2022-01'],
+                             'y': [2, 3],
+                         },
                      })
 
     s_edge = Server()
@@ -72,13 +78,17 @@ class ComputeServerCount(TestCase):
     self.assertEqual(compute_server_count_by_month(first_upload_time,
                                                    second_upload_time, False),
                      {
-                       'x': ['2022-06'],
-                       'y': [1]
+                         'count': {
+                             'x': ['2022-06'],
+                             'y': [1],
+                         },
                      })
 
     self.assertEqual(compute_server_count_by_month(first_upload_time,
                                                    second_upload_time, True),
                      {
-                       'x': ['2022-05', '2022-06'],
-                       'y': [1, 1]
+                         'count': {
+                             'x': ['2022-05', '2022-06'],
+                             'y': [1, 1],
+                         },
                      })
