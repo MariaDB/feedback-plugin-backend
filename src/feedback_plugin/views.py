@@ -18,14 +18,17 @@
 import re
 import csv
 import logging
+import datetime
 
 from django.db.models import (F, IntegerField, Count, Value,
                               DateField, Case, When, ProtectedError)
 from django.db.models.functions import (Cast, ExtractYear, ExtractMonth,
                                         Concat, TruncYear, TruncMonth)
 from django.http.response import (HttpResponse, HttpResponseNotAllowed,
-                                  HttpResponseBadRequest, JsonResponse)
+                                  HttpResponseBadRequest, JsonResponse,
+                                  HttpResponseForbidden)
 from django.contrib.gis.geoip2 import GeoIP2, GeoIP2Exception
+from django.utils import timezone
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
@@ -145,38 +148,61 @@ def feedback_os(request) -> JsonResponse:
   return JsonResponse({'result': list(query)})
 
 
+def handle_upload_form(request, ip=None, upload_time=timezone.now()):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    # Bind the file to the Django form
+    form = UploadFileForm(request.POST, request.FILES)
+
+    if not form.is_valid():
+        return HttpResponseBadRequest()
+
+    try:
+        geoip = GeoIP2()
+        if ip is None:
+            if 'HTTP_X_REAL_IP' in request.META:
+              ip = request.META['HTTP_X_REAL_IP']
+            elif 'REMOTE_ADDRESS' in request.META:
+              ip = request.META['REMOTE_ADDRESS']
+            elif 'HTTP_X_FORWARDED_FOR' in request.META:
+              ip = request.META['HTTP_X_FORWARDED_FOR'].partition(',')[0]
+        report_country = geoip.country_code(ip)
+    except (GeoIP2Exception, GeoIP2Error, TypeError) as e:
+        report_country = 'ZZ' # Unknown according to ISO 3166-1993
+
+    #TODO(andreia) configure web server to limit post size otherwise
+    # we could run into a Denial of Service attack if we get too big of
+    # an upload.
+    data_upload = RawData(country=report_country,
+                          data=request.FILES['data'].read(),
+                          upload_time=upload_time)
+    data_upload.save()
+
+    response = HttpResponse("<h1>ok</h1>", status=200)
+    return response
+
+
 @csrf_exempt
 def file_post(request):
+    return handle_upload_form(request)
 
-  if request.method != 'POST':
-    return HttpResponseNotAllowed(['POST'])
 
-  # Bind the file to the Django form
-  form = UploadFileForm(request.POST, request.FILES)
+@csrf_exempt
+def file_post_with_ip(request):
+    try:
+        config = Config.objects.get(key='X_API_KEY')
+    except Config.DoesNotExist:
+        # Server misconfigured.
+        return HttpResponse('No X_API_KEY configured for Server', status=403)
 
-  if not form.is_valid():
-    return HttpResponseBadRequest()
+    if ('X_API_KEY' not in request.META or
+        request.META['X_API_KEY'] != config.value):
+        return HttpResponseForbidden()
 
-  try:
-    geoip = GeoIP2()
-    if 'HTTP_X_REAL_IP' in request.META:
-      ip = request.META['HTTP_X_REAL_IP']
-    elif 'REMOTE_ADDRESS' in request.META:
-      ip = request.META['REMOTE_ADDRESS']
-    elif 'HTTP_X_FORWARDED_FOR' in request.META:
-      ip = request.META['HTTP_X_FORWARDED_FOR'].partition(',')[0]
-    else:
-      ip = None
-    report_country = geoip.country_code(ip)
-  except (GeoIP2Exception, GeoIP2Error, TypeError) as e:
-    report_country = 'ZZ' # Unknown according to ISO 3166-1993
+    ip = request.META['X_REPORT_FROM_IP']
+    date = datetime.datetime.strptime(request.META['X_REPORT_DATE'], '%Y-%m-%d %H:%M:%S.%f')
 
-  #TODO(andreia) configure web server to limit post size otherwise
-  # we could run into a Denial of Service attack if we get too big of
-  # an upload.
-  data_upload = RawData(country=report_country,
-                        data=request.FILES['data'].read())
-  data_upload.save()
+    upload_time = date.replace(tzinfo=datetime.timezone.utc)
 
-  response = HttpResponse("<h1>ok</h1>", status=200)
-  return response
+    return handle_upload_form(request, ip, upload_time)
