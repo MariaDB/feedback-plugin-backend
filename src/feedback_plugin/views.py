@@ -15,10 +15,11 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1335  USA
 '''
 
-import re
 import csv
-import logging
 import datetime
+import logging
+import re
+import socket
 
 from django.db.models import (F, IntegerField, Count, Value,
                               DateField, Case, When, ProtectedError)
@@ -168,7 +169,7 @@ def handle_upload_form(request, ip=None, upload_time=timezone.now()):
             elif 'HTTP_X_FORWARDED_FOR' in request.META:
               ip = request.META['HTTP_X_FORWARDED_FOR'].partition(',')[0]
         report_country = geoip.country_code(ip)
-    except (GeoIP2Exception, GeoIP2Error, TypeError) as e:
+    except (GeoIP2Exception, GeoIP2Error, TypeError, socket.gaierror) as e:
         report_country = 'ZZ' # Unknown according to ISO 3166-1993
 
     #TODO(andreia) configure web server to limit post size otherwise
