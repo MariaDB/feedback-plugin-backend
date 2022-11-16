@@ -159,6 +159,7 @@ def handle_upload_form(request, ip=None, upload_time=timezone.now()):
     if not form.is_valid():
         return HttpResponseBadRequest()
 
+    report_country = 'ZZ'
     try:
         geoip = GeoIP2()
         if ip is None:
