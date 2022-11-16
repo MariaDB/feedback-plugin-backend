@@ -78,7 +78,7 @@ class FilePostTest(TestCase):
 
         # Wrong X_API_KEY provided.
         response = c.post(reverse('file_post_protected'), data={'data': file},
-                          X_API_KEY='s3cr3t_wrong')
+                          HTTP_X_API_KEY='s3cr3t_wrong')
         self.assertEqual(response.status_code, 403)
         self.assertEqual(RawData.objects.all().count(), 0)
 
@@ -86,9 +86,9 @@ class FilePostTest(TestCase):
         file = SimpleUploadedFile('report.csv', file_content,
                                   content_type='application/octet-stream')
         response = c.post(reverse('file_post_protected'), data={'data': file},
-                          X_API_KEY='secr3t',
-                          X_REPORT_FROM_IP='140.211.166.134',
-                          X_REPORT_DATE='2019-01-02 12:03:33.000004')
+                          HTTP_X_API_KEY='secr3t',
+                          HTTP_X_REPORT_FROM_IP='140.211.166.134',
+                          HTTP_X_REPORT_DATE='2019-01-02 12:03:33.000004')
 
         raw_data_objects = RawData.objects.all().order_by('id')
 

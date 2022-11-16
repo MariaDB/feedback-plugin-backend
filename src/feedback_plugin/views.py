@@ -196,12 +196,12 @@ def file_post_with_ip(request):
         # Server misconfigured.
         return HttpResponse('No X_API_KEY configured for Server', status=403)
 
-    if ('X_API_KEY' not in request.META or
-        request.META['X_API_KEY'] != config.value):
+    if ('HTTP_X_API_KEY' not in request.META or
+        request.META['HTTP_X_API_KEY'] != config.value):
         return HttpResponseForbidden()
 
-    ip = request.META['X_REPORT_FROM_IP']
-    date = datetime.datetime.strptime(request.META['X_REPORT_DATE'], '%Y-%m-%d %H:%M:%S.%f')
+    ip = request.META['HTTP_X_REPORT_FROM_IP']
+    date = datetime.datetime.strptime(request.META['HTTP_X_REPORT_DATE'], '%Y-%m-%d %H:%M:%S.%f')
 
     upload_time = date.replace(tzinfo=datetime.timezone.utc)
 
