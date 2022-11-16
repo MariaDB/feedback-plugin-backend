@@ -130,3 +130,15 @@ class ChartMetadata(models.Model):
 
   def __str__(self):
       return f'{self.computed_start_date}, {self.computed_end_date}'
+
+class Config(models.Model):
+    key = models.CharField(max_length=128, primary_key=True)
+    value = models.CharField(max_length=1024)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['key'])
+        ]
+
+    def __str__(self):
+        return f'{self.key} = {self.value}'
