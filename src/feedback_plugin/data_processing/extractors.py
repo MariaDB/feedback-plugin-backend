@@ -8,7 +8,7 @@ import sys
 
 class DataExtractor(ABC):
     @abstractmethod
-    def get_required_keys(self):
+    def get_required_keys(self) -> set:
         pass
 
     @abstractmethod
@@ -119,7 +119,6 @@ class ArchitectureExtractor(ServerFactExtractor):
                     first_digit = re.search('[0-9]+', distro_string)
                     if first_digit is not None:
                         version_string = distro_string[first_digit.start():]
-
             except KeyError:
                 pass
 

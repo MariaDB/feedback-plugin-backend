@@ -197,10 +197,10 @@ def process_raw_data():
 
         srv_facts = []
 
-        def get_fact_by_key(key, server, value):
+        def get_fact_by_key(key: str, server: Server, value: str):
             try:
                 srv_fact = ComputedServerFact.objects.get(key=key,
-                                                          server__id=server.id)
+                                                          server=server)
                 srv_fact.value = value
                 return (False, srv_fact)
             except ComputedServerFact.DoesNotExist:
@@ -228,17 +228,18 @@ def process_raw_data():
 
         # Create Upload and all Data entries for this RawData.
         upload = Upload(upload_time=raw_upload_time, server=server)
-
-        for i in range(len(values)):
-            values[i].upload = upload
         upload.save()
+
+        for value in values:
+            value.upload = upload
         Data.objects.bulk_create(values)
 
     RawData.objects.all().delete()
 
 
-def get_upload_data_for_data_extractors(start_date, end_date,
-                                        data_extractors):
+def get_upload_data_for_data_extractors(start_date: datetime,
+                                        end_date: datetime,
+                                        data_extractors: list[DataExtractor]):
     keys = set()
     for extractor in data_extractors:
         keys |= extractor.get_required_keys()
@@ -265,7 +266,9 @@ def get_upload_data_for_data_extractors(start_date, end_date,
     return servers
 
 
-def extract_server_facts(start_date, end_date, data_extractors):
+def extract_server_facts(start_date: datetime,
+                         end_date: datetime,
+                         data_extractors: DataExtractor):
     servers = get_upload_data_for_data_extractors(start_date, end_date,
                                                   data_extractors)
     facts = defaultdict(dict)
@@ -326,7 +329,8 @@ def extract_server_facts(start_date, end_date, data_extractors):
                                                batch_size=1000)
 
 
-def check_if_upload_fact_exists(key: str, upload_id: int):
+def check_if_upload_fact_exists(key: str,
+                                upload_id: int) -> ComputedUploadFact | None:
     try:
         return ComputedUploadFact.objects.get(key=key, upload_id=upload_id)
     except ComputedUploadFact.DoesNotExist:
