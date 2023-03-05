@@ -66,8 +66,8 @@ def compute_version_breakdown_by_month(start_date: datetime,
         cuf1.key = 'server_version_major' AND
         cuf2.key = 'server_version_minor' AND
         u.upload_time
-            {'>=' if start_closed_interval else '>'} '{start_date_string}'
-        u.upload_time <= '{end_date_string}' AND
+            {'>=' if start_closed_interval else '>'} '{start_date_string}' AND
+        u.upload_time <= '{end_date_string}'
     GROUP BY year, month, major, minor"""
 
     cursor = connection.cursor()
