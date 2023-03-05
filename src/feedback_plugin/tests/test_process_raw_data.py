@@ -2,14 +2,14 @@ from datetime import datetime, timezone
 import os
 from zoneinfo import ZoneInfo
 
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from feedback_plugin.data_processing.etl import process_raw_data
 from feedback_plugin.models import (RawData, Server, Upload, Data,
                                     ComputedServerFact, ComputedUploadFact)
 from feedback_plugin.tests.utils import load_test_data, create_test_database
 
-class ProcessRawData(TestCase):
+class ProcessRawData(TransactionTestCase):
   def test_process_raw_data(self):
     file_content = b'FEEDBACK_SERVER_UID\thLHc4QZlbY1khIQIFF1T7A6tj04=\x00\nFEEDBACK_WHEN\tstartup\nFEEDBACK_USER_INFO\t\n'
     file_content_server_2 = b'FEEDBACK_SERVER_UID\tAABBCCDD=\x00\nFEEDBACK_WHEN\tstartup\nFEEDBACK_USER_INFO\t\n'
@@ -71,6 +71,7 @@ class ProcessRawData(TestCase):
                        filter(key='country_code', server_id=s2.id)[0].value,
                        'UA')
 
+class TestLoadFixtures(TransactionTestCase):
   def test_load_fixtures(self):
     create_test_database()
 

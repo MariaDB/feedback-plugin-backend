@@ -28,6 +28,11 @@ class RawData(models.Model):
   data = models.BinaryField()
   upload_time = models.DateTimeField(default=timezone.now)
 
+  class Meta:
+    indexes = [
+        models.Index(fields=['upload_time'])
+    ]
+
   def __str__(self):
     return f'{self.country}, {self.upload_time}, {len(self.data)}'
 
@@ -38,7 +43,8 @@ class Server(models.Model):
     This table holds an entry for each unique server that has reported
     data to the feedback plugin.
   '''
-  pass
+  def __str__(self):
+      return f'{self.id}'
 
 
 class Upload(models.Model):
@@ -87,6 +93,11 @@ class ComputedUploadFact(models.Model):
   key = models.CharField(max_length=100)
   value = models.CharField(max_length=1000)
 
+  class Meta:
+    indexes = [
+        models.Index(fields=['key', 'value'])
+    ]
+
   def __str__(self):
    return f'{self.upload.id} : S{self.upload.server_id} -> {self.key} = {self.value}'
 
@@ -101,6 +112,11 @@ class ComputedServerFact(models.Model):
   )
   key = models.CharField(max_length=100)
   value = models.CharField(max_length=1000)
+
+  class Meta:
+    indexes = [
+        models.Index(fields=['key', 'value'])
+    ]
 
   def __str__(self):
     return f'{self.server_id} -> {self.key} = {self.value}'

@@ -1,5 +1,8 @@
+from datetime import datetime, timezone, timedelta
+import csv
+import re
+import logging
 from collections import defaultdict
-from datetime import datetime
 from io import StringIO
 import csv
 
@@ -8,6 +11,144 @@ from django.db.models import Q
 from feedback_plugin.models import (ComputedServerFact, ComputedUploadFact,
                                     Data, RawData, Server, Upload)
 from .extractors import DataExtractor
+
+def process_from_date(start_date, end_date):
+  raw_objects = RawData.objects.filter(upload_time__gt=start_date, upload_time__lte=end_date)
+  for raw_upload in raw_objects:
+    country_code = raw_upload.country
+    raw_upload_time = raw_upload.upload_time
+
+    raw_data = StringIO(raw_upload.data.decode('utf-8').replace('\x00', ''))
+
+    reader = csv.reader(raw_data, delimiter='\t')
+
+    values = []
+    data = {}
+    for row in reader:
+      # We only expect KV pairs.
+      if len(row) != 2:
+        raw_upload.delete()
+        continue
+
+      data[row[0]] = row[1]
+      values.append(Data(key=row[0], value=row[1]))
+
+    if ('FEEDBACK_SERVER_UID' not in data
+        or len(data['FEEDBACK_SERVER_UID']) == 0):
+      raw_upload.delete()
+      continue
+
+    if ('FEEDBACK_USER_INFO' in data
+        and data['FEEDBACK_USER_INFO'] == 'mysql-test'):
+      raw_upload.delete()
+      continue
+
+    uid = data['FEEDBACK_SERVER_UID']
+    try:
+      srv_uid_fact = ComputedServerFact.objects.get(key='uid', value=uid)
+      server = Server.objects.get(id=srv_uid_fact.server.id)
+    except ComputedServerFact.DoesNotExist:
+      server = Server()
+      srv_uid_fact = ComputedServerFact(key='uid',
+                                        value=uid,
+                                        server=server)
+      server.save()
+      srv_uid_fact.save()
+
+    except Server.DoesNotExist:
+      # We have a fact, but not a server attached to it. This should never
+      # happen.
+      assert(0)
+
+    srv_facts = []
+    def get_fact_by_key(key, server, value):
+      try:
+        srv_fact = ComputedServerFact.objects.get(key=key,
+                                                  server__id=server.id)
+        srv_fact.value = value
+        return (False, srv_fact)
+      except ComputedServerFact.DoesNotExist:
+        return (True, ComputedServerFact(key=key, value=value, server=server))
+
+    srv_facts.append(get_fact_by_key('country_code', server, country_code))
+    srv_facts.append(get_fact_by_key('last_seen', server, raw_upload_time))
+    srv_facts.append(get_fact_by_key('first_seen', server, raw_upload_time))
+    # If first_seen already existed, we don't override it.
+    if (srv_facts[-1][0] == False):
+      srv_facts.pop()
+
+    srv_facts_create = map(lambda x: x[1], filter(lambda x: x[0], srv_facts))
+    srv_facts_update = map(lambda x: x[1], filter(lambda x: not x[0], srv_facts))
+
+    # Create Server computed facts for this RawData.
+    ComputedServerFact.objects.bulk_create(srv_facts_create,
+                                           batch_size=1000)
+    ComputedServerFact.objects.bulk_update(srv_facts_update, ['value'],
+                                           batch_size=1000)
+
+    # Create Upload and all Data entries for this RawData.
+    upload = Upload(upload_time=raw_upload_time, server=server)
+
+    for i in range(len(values)):
+      values[i].upload = upload
+    upload.save()
+    Data.objects.bulk_create(values)
+
+    raw_upload.delete()
+
+def process_raw_data():
+  first_object = RawData.objects.order_by('upload_time').first()
+  last_object = RawData.objects.order_by('-upload_time').first()
+
+  if first_object is None:
+      return # Nothing to do
+
+  start_date = first_object.upload_time - timedelta(seconds=1)
+  end_date = last_object.upload_time
+
+  total_days = end_date - start_date
+
+  print(total_days)
+
+  slice_size_in_seconds = 60*60*24;
+
+  while start_date <= end_date:
+      local_start_date = start_date
+      local_end_date = start_date + timedelta(seconds=slice_size_in_seconds)
+      print(f'[ {datetime.now()} ]Processing from date: {start_date.strftime("%Y-%m-%d")} {local_end_date.strftime("%Y-%m-%d")}')
+      process_from_date(local_start_date, local_end_date)
+      start_date = local_end_date
+
+  print('Finished processing data')
+
+
+def compute_upload_facts(start_date, end_date):
+
+  data_to_process = Data.objects.filter(upload__upload_time__gte=start_date,
+                      upload__upload_time__lte=end_date,
+                      key='VERSION')
+
+  pattern = re.compile('(?P<major>\d+).(?P<minor>\d+).(?P<point>\d+)')
+  version_facts = []
+  version_dict = {}
+
+  for data in data_to_process:
+    matches = pattern.match(data.value)
+    if (data.upload_id not in version_dict):
+      version_dict[data.upload_id] = {}
+
+    version_dict[data.upload_id]['major'] = ComputedUploadFact(
+                         key='version_major',
+                         value=matches.group('major'),
+                         upload=data.upload)
+    version_dict[data.upload_id]['minor'] = ComputedUploadFact(
+                         key='version_minor',
+                         value=matches.group('minor'),
+                         upload=data.upload)
+    version_dict[data.upload_id]['point'] = ComputedUploadFact(
+                         key='version_point',
+                         value=matches.group('point'),
+                         upload=data.upload)
 
 
 def process_raw_data():
