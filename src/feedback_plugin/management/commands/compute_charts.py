@@ -1,26 +1,30 @@
+from datetime import datetime
+from typing import Callable
 import copy
-import sys
+import logging
 
 from django.core.management.base import BaseCommand, CommandError
 
 from feedback_plugin.models import (Chart, ChartMetadata, Upload)
 from feedback_plugin.data_processing import charts
-
 from sql_utils.utils import print_sql
+
 
 class DatabaseHasNoUploads(Exception):
     pass
 
+
 CHARTS_MAP = {
-        'server-count' : {
-            'callback' : charts.compute_server_count_by_month,
-            'title' : 'Server Count by Month',
+        'server-count': {
+            'callback': charts.compute_server_count_by_month,
+            'title': 'Server Count by Month',
         },
-        'version-breakdown-by-month' : {
-            'callback' : charts.compute_version_breakdown_by_month,
-            'title' : 'Server Version Breakdown by Month',
+        'version-breakdown-by-month': {
+            'callback': charts.compute_version_breakdown_by_month,
+            'title': 'Server Version Breakdown by Month',
         },
 }
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -28,8 +32,7 @@ class Command(BaseCommand):
         parser.add_argument('--chart', default='all')
 
     @staticmethod
-    def get_computation_object(chart_id : str, force_recreate : bool):
-
+    def get_computation_object(chart_id: str, force_recreate: bool):
         first_upload = Upload.objects.all().order_by('upload_time')[:1]
         last_upload = Upload.objects.all().order_by('-upload_time')[:1]
 
@@ -60,10 +63,9 @@ class Command(BaseCommand):
 
         return (chart, metadata, start_date, end_date, start_closed_interval)
 
-
     @staticmethod
-    def merge_multi_series_chart_data(chart_values : dict[str, dict[str, list]],
-                                      new_data : dict[str, dict[str, list]]
+    def merge_multi_series_chart_data(chart_values: dict[str, dict[str, list]],
+                                      new_data: dict[str, dict[str, list]]
     ) -> dict[str, dict[str, list]]:
         result = {}
         for series in chart_values:
@@ -79,8 +81,8 @@ class Command(BaseCommand):
         return result
 
     @staticmethod
-    def merge_chart_data(chart_values : dict[str, list],
-                         new_data : dict[str, list]) -> dict[str, list]:
+    def merge_chart_data(chart_values: dict[str, list],
+                         new_data: dict[str, list]) -> dict[str, list]:
         result = copy.deepcopy(chart_values)
 
         if 'x' not in new_data:
@@ -97,17 +99,24 @@ class Command(BaseCommand):
         return result
 
     @staticmethod
-    def compute_chart(chart_id : str, title : str, callback, force_recreate : bool):
+    def compute_chart(chart_id: str,
+                      title: str,
+                      fetch_data_callback: Callable[[datetime, datetime, bool],
+                                                    dict],
+                      force_recreate: bool):
+        logging.info(f'Computing chart: {chart_id} - {title}')
         (chart, metadata,
          start_date, end_date,
          start_closed_interval
         ) = Command.get_computation_object(chart_id, force_recreate)
 
-        data = callback(start_date, end_date, start_closed_interval)
+        data = fetch_data_callback(start_date, end_date, start_closed_interval)
 
         chart.title = title
 
-        chart.values = Command.merge_multi_series_chart_data(chart.values, data)
+        logging.debug(f'Merging chart data for chart: {chart_id}')
+        chart.values = Command.merge_multi_series_chart_data(chart.values,
+                                                             data)
 
         chart.save()
         metadata.save()
