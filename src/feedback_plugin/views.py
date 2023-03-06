@@ -53,10 +53,14 @@ class ChartView(View):
         except Chart.DoesNotExist:
             return JsonResponse({})  # No data
 
+        metadata = chart.metadata
         return JsonResponse({
             'title': chart.title,
             'values': chart.values,
-            'metadata': chart.metadata
+            'metadata': {
+                'computed_start_date': metadata.computed_start_date,
+                'computed_end_date': metadata.computed_end_date,
+            }
         })
 
 
