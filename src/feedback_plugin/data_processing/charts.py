@@ -63,8 +63,8 @@ def compute_version_breakdown_by_month(start_date: datetime,
         feedback_plugin_upload u ON u.id = cuf1.upload_id JOIN
         feedback_plugin_server s ON u.server_id = s.id
     WHERE
-        cuf1.key = 'server_version_major' AND
-        cuf2.key = 'server_version_minor' AND
+        cuf1.`key` = 'server_version_major' AND
+        cuf2.`key` = 'server_version_minor' AND
         u.upload_time
             {'>=' if start_closed_interval else '>'} '{start_date_string}' AND
         u.upload_time <= '{end_date_string}'

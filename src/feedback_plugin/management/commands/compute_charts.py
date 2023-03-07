@@ -19,7 +19,7 @@ CHARTS_MAP = {
             'callback': charts.compute_server_count_by_month,
             'title': 'Server Count by Month',
         },
-        'version-breakdown-by-month': {
+        'version-breakdown': {
             'callback': charts.compute_version_breakdown_by_month,
             'title': 'Server Version Breakdown by Month',
         },
