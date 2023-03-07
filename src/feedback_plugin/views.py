@@ -17,11 +17,8 @@
 
 import datetime
 import logging
-import re
 import socket
 
-from django.db.models import (F, Count, Value, DateField, Case, When)
-from django.db.models.functions import (ExtractYear, ExtractMonth, TruncMonth)
 from django.http.response import (HttpResponse, HttpResponseNotAllowed,
                                   HttpResponseBadRequest, JsonResponse,
                                   HttpResponseForbidden)
@@ -32,8 +29,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from geoip2.errors import GeoIP2Error
 
-
-from .models import Chart, Config, Data, RawData, Upload
+from .models import Chart, Config, RawData
 from .forms import UploadFileForm
 
 
