@@ -158,5 +158,10 @@ LOGGING = {
             'level': os.environ['DJANGO_LOG_LEVEL'],
             'propagate': False,
         },
+        'commands': {
+            'handlers': ['console'],
+            'level': os.environ['DJANGO_LOG_LEVEL'],
+            'propagate': False,
+        },
     },
 }

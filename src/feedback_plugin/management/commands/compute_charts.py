@@ -25,6 +25,8 @@ CHARTS_MAP = {
         },
 }
 
+logger = logging.getLogger('commands')
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -104,7 +106,7 @@ class Command(BaseCommand):
                       fetch_data_callback: Callable[[datetime, datetime, bool],
                                                     dict],
                       force_recreate: bool):
-        logging.info(f'Computing chart: {chart_id} - {title}')
+        logger.info(f'Computing chart: {chart_id} - {title}')
         (chart, metadata,
          start_date, end_date,
          start_closed_interval
@@ -114,7 +116,7 @@ class Command(BaseCommand):
 
         chart.title = title
 
-        logging.debug(f'Merging chart data for chart: {chart_id}')
+        logger.info(f'Appending {len(data)} series, between {start_date} and {end_date}')
         chart.values = Command.merge_multi_series_chart_data(chart.values,
                                                              data)
 
