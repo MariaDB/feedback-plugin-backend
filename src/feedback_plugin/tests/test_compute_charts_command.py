@@ -64,22 +64,25 @@ class ComputeChartsCommand(TestCase):
         new_first_upload.id = None
         new_first_upload.save()
 
-        # Without recreate parameter, the chart only looks at follow-up data.
-        ComputeChartsCommand.call()
+        for _ in range(2):
+            # Without recreate parameter, the chart only looks at follow-up data.
+            # The second iteration ensures idempotency when no more new data is
+            # available.
+            ComputeChartsCommand.call()
 
-        chart.refresh_from_db()
-        self.assertEqual(chart.title, 'Server Count by Month')
-        self.assertEqual(chart.values,
-                         {
-                             'count': {
-                                 'x': ['2022-01', '2022-02', '2022-03', '2022-04'],
-                                 'y': [3, 4, 1, 1],
-                             }
-                         })
-        self.assertEqual(chart.metadata.computed_start_date,
-                         first_upload.upload_time)
-        self.assertEqual(chart.metadata.computed_end_date,
-                         new_last_upload.upload_time)
+            chart.refresh_from_db()
+            self.assertEqual(chart.title, 'Server Count by Month')
+            self.assertEqual(chart.values,
+                             {
+                                 'count': {
+                                     'x': ['2022-01', '2022-02', '2022-03', '2022-04'],
+                                     'y': [3, 4, 1, 1],
+                                 }
+                             })
+            self.assertEqual(chart.metadata.computed_start_date,
+                             first_upload.upload_time)
+            self.assertEqual(chart.metadata.computed_end_date,
+                             new_last_upload.upload_time)
 
         # With recreate parameter, the chart is recreated.
         ComputeChartsCommand.call('--recreate')

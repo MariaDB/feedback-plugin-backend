@@ -87,7 +87,7 @@ class Command(BaseCommand):
                          new_data: dict[str, list]) -> dict[str, list]:
         result = copy.deepcopy(chart_values)
 
-        if 'x' not in new_data:
+        if 'x' not in new_data or len(new_data['x']) == 0:
             return result
 
         if len(result['x']) > 0 and result['x'][-1] == new_data['x'][0]:
