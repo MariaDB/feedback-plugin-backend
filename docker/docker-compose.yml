@@ -16,6 +16,8 @@ services:
     volumes:
       - ${MARIADB_DATADIR}:/var/lib/mysql:Z
       - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d:Z
+      - ${MARIADB_TMPDIR}:/tmp/mariadb:Z
+    command: --tmpdir=/tmp/mariadb
   web:
     build:
       context: ../

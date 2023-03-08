@@ -1,1 +1,3 @@
 mariadb/datadir
+mariadb/confdir
+mariadb/tmpdir
