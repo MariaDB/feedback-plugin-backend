@@ -122,7 +122,7 @@ def process_raw_data():
 
     total_days = end_date - start_date
 
-    logger.info(f'Will process raw data for a total of {total_days} days')
+    logger.info(f'Will process raw data for a total of {total_days}')
 
     slice_24_hours = 60 * 60 * 24
     while start_date <= end_date:
