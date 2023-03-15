@@ -248,6 +248,7 @@ def extract_upload_facts(start_date: datetime,
                          end_date: datetime,
                          data_extractors: DataExtractor,
                          end_inclusive: bool = True):
+    logger.info(f'Extracting facts from {start_date} to {end_date}')
     servers = get_upload_data_for_data_extractors(start_date, end_date,
                                                   data_extractors,
                                                   end_inclusive)
@@ -258,7 +259,7 @@ def extract_upload_facts(start_date: datetime,
         for s_id in new_facts:
             facts[s_id].update(new_facts[s_id])
 
-    logger.info(f'Extracted facts for {len(facts)} servers')
+    logger.debug(f'Extracted facts for {len(facts)} servers')
 
     facts_create = []
     facts_update = []
@@ -279,8 +280,8 @@ def extract_upload_facts(start_date: datetime,
                     up_fact.value = fact_value
                     facts_update.append(up_fact)
 
-    logger.info(f'Creating {len(facts_create)} new facts')
+    logger.debug(f'Creating {len(facts_create)} new facts')
     ComputedUploadFact.objects.bulk_create(facts_create, batch_size=1000)
-    logger.info(f'Updating {len(facts_update)} already existing facts')
+    logger.debug(f'Updating {len(facts_update)} already existing facts')
     ComputedUploadFact.objects.bulk_update(facts_update, ['value'],
                                            batch_size=1000)
