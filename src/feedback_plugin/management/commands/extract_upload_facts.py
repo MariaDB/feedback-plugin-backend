@@ -24,7 +24,8 @@ class Command(BaseCommand):
             cur_end = start_time + timedelta(seconds=60 * 60 * 24)
 
             etl.extract_upload_facts(start_time, cur_end,
-                                     [extractors.AllUploadFactExtractor()])
+                                     [extractors.AllUploadFactExtractor()],
+                                     end_inclusive=False)
             start_time = cur_end
 
         etl.extract_upload_facts(start_time, end_time,
