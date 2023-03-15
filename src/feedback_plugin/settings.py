@@ -163,5 +163,10 @@ LOGGING = {
             'level': os.environ['DJANGO_LOG_LEVEL'],
             'propagate': False,
         },
+        'etl': {
+            'handlers': ['console'],
+            'level': os.environ['DJANGO_LOG_LEVEL'],
+            'propagate': False,
+        },
     },
 }

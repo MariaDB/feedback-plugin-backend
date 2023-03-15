@@ -264,6 +264,8 @@ def extract_upload_facts(start_date: datetime,
                     up_fact.value = fact_value
                     facts_update.append(up_fact)
 
+    logger.info(f'Creating {len(facts_create)} new facts')
     ComputedUploadFact.objects.bulk_create(facts_create, batch_size=1000)
+    logger.info(f'Updating {len(facts_update)} already existing facts')
     ComputedUploadFact.objects.bulk_update(facts_update, ['value'],
                                            batch_size=1000)
