@@ -122,23 +122,25 @@ def process_raw_data():
 
     total_days = end_date - start_date
 
-    print(total_days)
+    logger.info(f'Will process raw data for a total of {total_days} days')
 
-    slice_size_in_seconds = 60*60*24;
-
+    slice_24_hours = 60 * 60 * 24
     while start_date <= end_date:
         local_start_date = start_date
-        local_end_date = start_date + timedelta(seconds=slice_size_in_seconds)
-        print(f'[ {datetime.now()} ]Processing from date: {start_date.strftime("%Y-%m-%d")} {local_end_date.strftime("%Y-%m-%d")}')
+        local_end_date = start_date + timedelta(seconds=slice_24_hours)
+        logger.info(f'Processing from {start_date.strftime("%Y-%m-%d")} to '
+                    f'{local_end_date.strftime("%Y-%m-%d")}')
+
         process_from_date(local_start_date, local_end_date)
         start_date = local_end_date
 
-    print('Finished processing data')
+    logger.info('Finished processing data')
 
 
 def get_upload_data_for_data_extractors(start_date: datetime,
                                         end_date: datetime,
-                                        data_extractors: list[DataExtractor]):
+                                        data_extractors: list[DataExtractor],
+                                        end_inclusive: bool):
     keys = set()
     for extractor in data_extractors:
         keys |= extractor.get_required_keys()
@@ -146,11 +148,15 @@ def get_upload_data_for_data_extractors(start_date: datetime,
     for key in keys:
         key_filter |= Q(key__iexact=key)
 
+    date_filter = Q(upload__upload_time__gte=start_date)
+    if end_inclusive:
+        date_filter &= Q(upload__upload_time__lte=end_date)
+    else:
+        date_filter &= Q(upload__upload_time__lt=end_date)
+
     # Extract server data about Architecture and OS
     data_to_process = Data.objects.filter(
-        Q(upload__upload_time__gte=start_date) &
-        Q(upload__upload_time__lte=end_date) &
-        key_filter
+        date_filter & key_filter
     ).select_related('upload__server')
 
     servers = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -167,9 +173,11 @@ def get_upload_data_for_data_extractors(start_date: datetime,
 
 def extract_server_facts(start_date: datetime,
                          end_date: datetime,
-                         data_extractors: DataExtractor):
+                         data_extractors: DataExtractor,
+                         end_inclusive: bool = True):
     servers = get_upload_data_for_data_extractors(start_date, end_date,
-                                                  data_extractors)
+                                                  data_extractors,
+                                                  end_inclusive)
     facts = defaultdict(dict)
     for extractor in data_extractors:
         new_facts = extractor.extract_facts(servers)
@@ -238,9 +246,11 @@ def check_if_upload_fact_exists(key: str,
 
 def extract_upload_facts(start_date: datetime,
                          end_date: datetime,
-                         data_extractors: DataExtractor):
+                         data_extractors: DataExtractor,
+                         end_inclusive: bool = True):
     servers = get_upload_data_for_data_extractors(start_date, end_date,
-                                                  data_extractors)
+                                                  data_extractors,
+                                                  end_inclusive)
 
     facts = defaultdict(dict)
     for extractor in data_extractors:
