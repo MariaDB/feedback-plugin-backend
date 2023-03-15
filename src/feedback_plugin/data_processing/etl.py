@@ -1,14 +1,17 @@
-from datetime import datetime, timedelta
-import csv
-import re
 from collections import defaultdict
+from datetime import datetime, timedelta
 from io import StringIO
+import csv
+import logging
 
 from django.db.models import Q
 
 from feedback_plugin.models import (ComputedServerFact, ComputedUploadFact,
                                     Data, RawData, Server, Upload)
 from .extractors import DataExtractor
+
+
+logger = logging.getLogger('etl')
 
 
 def process_from_date(start_date: datetime, end_date: datetime):
@@ -244,6 +247,8 @@ def extract_upload_facts(start_date: datetime,
         new_facts = extractor.extract_facts(servers)
         for s_id in new_facts:
             facts[s_id].update(new_facts[s_id])
+
+    logger.info(f'Extracted facts for {len(facts)} servers')
 
     facts_create = []
     facts_update = []
