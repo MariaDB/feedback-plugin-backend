@@ -104,11 +104,11 @@ class ComputeChartsCommand(TestCase):
     def test_compute_version_breakdown_by_month(self):
         create_test_database()
 
-        ComputeChartsCommand.call('--recreate', '--chart=version-breakdown-by-month')
+        ComputeChartsCommand.call('--recreate', '--chart=version-breakdown')
 
         self.assertEqual(Chart.objects.all().count(), 1)
 
-        chart = Chart.objects.get(id='version-breakdown-by-month')
+        chart = Chart.objects.get(id='version-breakdown')
 
         self.assertEqual(chart.title, 'Server Version Breakdown by Month')
         self.assertEqual(chart.values,
