@@ -80,6 +80,8 @@ def handle_upload_form(request, ip=None, upload_time=timezone.now()):
                 ip = request.META['REMOTE_ADDRESS']
             elif 'HTTP_X_FORWARDED_FOR' in request.META:
                 ip = request.META['HTTP_X_FORWARDED_FOR'].partition(',')[0]
+        if ip is None:
+            raise TypeError
         report_country = geoip.country_code(ip)
     except (GeoIP2Exception, GeoIP2Error, TypeError, socket.gaierror):
         report_country = 'ZZ'  # Unknown according to ISO 3166-1993
