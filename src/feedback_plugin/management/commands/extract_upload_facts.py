@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
 
 from django.core.management.base import BaseCommand
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         end_time = options['end_time']
         workers = options['workers']
 
-        with ThreadPoolExecutor(max_workers=workers) as executor:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
             jobs = []
             while start_time + timedelta(seconds=60 * 60 * 24) <= end_time:
                 cur_end = start_time + timedelta(seconds=60 * 60 * 24)
