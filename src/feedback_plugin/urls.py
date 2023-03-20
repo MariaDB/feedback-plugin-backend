@@ -28,6 +28,7 @@ urlpatterns = [
         name='version_breakdown'),
    path('rest/v1/architecture/', views.ChartView.as_view(chart_id='architecture')),
    path('rest/v1/os/', views.ChartView.as_view(chart_id='os')),
+   path('rest/v1/post', views.file_post, name='post'),
    path('rest/v1/file-post/', views.file_post, name='file_post'),
    path('rest/v1/file-post-protected/', views.file_post_with_ip, name='file_post_protected'),
 ]
