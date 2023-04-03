@@ -24,7 +24,7 @@ RUN pip install --upgrade pip && \
 COPY ./docker/app/requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
-COPY ./docker/app/entrypoint.sh ./
+COPY ./docker/app/entrypoint.sh /entrypoint.sh
 
 # copy project
 RUN mkdir -p ./logs/
@@ -32,4 +32,4 @@ RUN mkdir -p ./logs/
 WORKDIR /app/src/
 
 # run entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
