@@ -46,7 +46,6 @@ class ProcessPoolFactExtractor(BaseCommand):
                 job = executor.submit(self._extract_cb,
                                       start_time, cur_end,
                                       self._extractors,
-                                      [extractors.AllUploadFactExtractor()],
                                       end_inclusive=False)
                 jobs.append(job)
                 start_time = cur_end
@@ -56,4 +55,3 @@ class ProcessPoolFactExtractor(BaseCommand):
             self._extract_cb(start_time, end_time,
                              self._extractors,
                              end_inclusive=True)
-
