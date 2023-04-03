@@ -51,7 +51,7 @@ def compute_version_breakdown_by_month(start_date: datetime,
 
     query = f"""
     SELECT
-        count(*) as cnt,
+        count(distinct u.server_id) as cnt,
         EXTRACT(YEAR FROM u.upload_time) year,
         EXTRACT(MONTH FROM u.upload_time) month,
         cuf1.value as major,
@@ -60,8 +60,7 @@ def compute_version_breakdown_by_month(start_date: datetime,
         feedback_plugin_computeduploadfact cuf1 JOIN
         feedback_plugin_computeduploadfact cuf2
             ON cuf1.upload_id = cuf2.upload_id JOIN
-        feedback_plugin_upload u ON u.id = cuf1.upload_id JOIN
-        feedback_plugin_server s ON u.server_id = s.id
+        feedback_plugin_upload u ON u.id = cuf1.upload_id
     WHERE
         cuf1.`key` = 'server_version_major' AND
         cuf2.`key` = 'server_version_minor' AND
@@ -78,5 +77,43 @@ def compute_version_breakdown_by_month(start_date: datetime,
         (count, year, month, major, minor) = row
         result[f'{major}.{minor}']['x'].append(f'{year}-{month}')
         result[f'{major}.{minor}']['y'].append(int(count))
+
+    return result
+
+
+def compute_architecture_breakdown_by_month(start_date: datetime,
+                                            end_date: datetime,
+                                            start_closed_interval: bool
+) -> dict[str, list[str]]:
+    start_date_string = start_date.strftime('%Y-%m-%d %H:%M:%S.%f')
+    end_date_string = end_date.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+    query = f"""
+    SELECT
+        count(distinct u.server_id) as cnt,
+        EXTRACT(YEAR FROM u.upload_time) year,
+        EXTRACT(MONTH FROM u.upload_time) month,
+        csf1.value as architecture
+    FROM
+        feedback_plugin_upload u JOIN
+        feedback_plugin_server s
+            ON u.server_id = s.id JOIN
+        feedback_plugin_computedserverfact csf1
+            ON csf1.server_id = s.id
+    WHERE
+        csf1.`key` = 'hardware_architecture' AND
+        u.upload_time
+            {'>=' if start_closed_interval else '>'} '{start_date_string}' AND
+        u.upload_time <= '{end_date_string}'
+    GROUP BY year, month, architecture"""
+
+    cursor = connection.cursor()
+    cursor.execute(query)
+
+    result = defaultdict(lambda: {'x': [], 'y': []})
+    for row in cursor.fetchall():
+        (count, year, month, architecture) = row
+        result[f'{architecture}']['x'].append(f'{year}-{month}')
+        result[f'{architecture}']['y'].append(int(count))
 
     return result

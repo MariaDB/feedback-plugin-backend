@@ -8,7 +8,8 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 
 from feedback_plugin.tests.utils import create_test_database
-from feedback_plugin.models import Server, Upload, Chart, ChartMetadata
+from feedback_plugin.models import Upload, Chart, ChartMetadata
+
 
 class ComputeChartsCommand(TestCase):
     @staticmethod
@@ -37,8 +38,8 @@ class ComputeChartsCommand(TestCase):
         first_upload = Upload.objects.all().order_by('upload_time')[:1][0]
         last_upload = Upload.objects.all().order_by('-upload_time')[:1][0]
 
-        self.assertEqual(Chart.objects.all().count(), 2)
-        self.assertEqual(ChartMetadata.objects.all().count(), 2)
+        self.assertEqual(Chart.objects.all().count(), 3)
+        self.assertEqual(ChartMetadata.objects.all().count(), 3)
 
         chart = Chart.objects.get(id='server-count')
         self.assertEqual(chart.title, 'Server Count by Month')
@@ -125,4 +126,23 @@ class ComputeChartsCommand(TestCase):
                                  'x': ['2022-1', '2022-2'],
                                  'y': [2, 2]
                              },
+                         })
+
+
+    def test_compute_architecture_breakdown_by_month(self):
+        create_test_database()
+
+        ComputeChartsCommand.call('--recreate', '--chart=architecture-breakdown')
+
+        self.assertEqual(Chart.objects.all().count(), 1)
+
+        chart = Chart.objects.get(id='architecture-breakdown')
+
+        self.assertEqual(chart.title, 'Architecture Breakdown by Month')
+        self.assertEqual(chart.values,
+                         {
+                            'x86_64': {
+                                'x': ['2022-1', '2022-2', '2022-3'],
+                                'y': [3, 4, 1],
+                            }
                          })

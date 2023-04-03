@@ -23,6 +23,10 @@ CHARTS_MAP = {
             'callback': charts.compute_version_breakdown_by_month,
             'title': 'Server Version Breakdown by Month',
         },
+        'architecture-breakdown': {
+            'callback': charts.compute_architecture_breakdown_by_month,
+            'title': 'Architecture Breakdown by Month',
+        }
 }
 
 logger = logging.getLogger('commands')
