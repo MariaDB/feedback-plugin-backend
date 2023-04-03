@@ -26,7 +26,7 @@ urlpatterns = [
    path('rest/v1/charts/version-breakdown/',
         views.ChartView.as_view(chart_id='version-breakdown'),
         name='version_breakdown'),
-   path('rest/v1/charts/architecture/',
+   path('rest/v1/charts/architecture-breakdown/',
         views.ChartView.as_view(chart_id='architecture')),
    path('rest/v1/charts/os/', views.ChartView.as_view(chart_id='os')),
    path('rest/v1/post', views.file_post, name='post'),
