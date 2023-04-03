@@ -175,6 +175,7 @@ def extract_server_facts(start_date: datetime,
                          end_date: datetime,
                          data_extractors: DataExtractor,
                          end_inclusive: bool = True):
+    logger.info(f'Extracting facts from {start_date} to {end_date}')
     servers = get_upload_data_for_data_extractors(start_date, end_date,
                                                   data_extractors,
                                                   end_inclusive)
