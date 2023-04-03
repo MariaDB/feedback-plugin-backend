@@ -26,7 +26,7 @@ RUN pip install -r requirements.txt
 
 COPY ./docker/app/entrypoint.sh /entrypoint.sh
 
-# copy project
+# logs for gunicorn
 RUN mkdir -p ./logs/
 
 WORKDIR /app/src/
