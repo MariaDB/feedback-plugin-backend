@@ -120,7 +120,8 @@ class Command(BaseCommand):
 
         chart.title = title
 
-        logger.info(f'Appending {len(data)} series, between {start_date} and {end_date}')
+        logger.info(f'Appending {len(data)} series, between {start_date} '
+                    f'and {end_date}')
         chart.values = Command.merge_multi_series_chart_data(chart.values,
                                                              data)
 
