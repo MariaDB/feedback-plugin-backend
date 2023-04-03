@@ -128,7 +128,6 @@ class ComputeChartsCommand(TestCase):
                              },
                          })
 
-
     def test_compute_architecture_breakdown_by_month(self):
         create_test_database()
 
