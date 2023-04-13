@@ -6,8 +6,8 @@ This project is the back-end used to collect and show data from MariaDB Server's
 The software is licensed under GPLv2.
 
 # Running the project
-The backend is written in Django. The recommended way to deploy the project
-is by using docker-compose.
+The backend is written in `Django`. The recommended way to deploy the project
+is by using `docker-compose`.
 
 ## Dependencies
 The host machine only needs `docker` and `docker-compose` installed. Follow your
@@ -22,6 +22,30 @@ $ docker-compose up --build
 
 The following set of commands will prepare the project for an optimal
 development workflow.
+Created containers:
+```bash
+$ docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS                        PORTS                                   NAMES
+1b498234aec9   nginx:latest   "/docker-entrypoint.…"   About a minute ago   Up 34 seconds                 0.0.0.0:8000->80/tcp, :::8000->80/tcp   prod-nginx
+844dc37fad7d   docker-web     "/entrypoint.sh guni…"   About a minute ago   Up 35 seconds                                                         prod-web
+f87577521801   docker-db      "docker-entrypoint.s…"   About a minute ago   Up About a minute (healthy)   3306/tcp                                prod-mariadb
+
+```
+
+Created images:
+```bash
+$ docker images
+REPOSITORY                    TAG       IMAGE ID       CREATED              SIZE
+docker-web                    latest    83c6ea637d2b   About a minute ago   1.45GB
+docker-db                     latest    24e2d178147f   2 hours ago          436MB
+nginx                         latest    6efc10a0510f   32 hours ago         142MB
+```
+
+Optionally if needed to remove database and run database initialization routine run:
+```bash
+$ cd docker/
+$ sudo rm -rf mariadb/datadir
+```
 
 # Running tests
 First make sure the container stack is functional, by running `docker ps`. You
