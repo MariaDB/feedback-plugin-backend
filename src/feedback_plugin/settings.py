@@ -76,14 +76,14 @@ WSGI_APPLICATION = 'feedback_plugin.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ['DJANGO_DB_NAME'],
-        'USER': os.environ['DJANGO_DB_USER_NAME'],
-        'PASSWORD': os.environ['DJANGO_DB_USER_PASSWORD'],
-        'HOST': 'db',
+        'NAME': os.environ['MARIADB_DATABASE'],
+        'USER': os.environ['MARIADB_USER'],
+        'PASSWORD': os.environ['MARIADB_PASSWORD'],
+        'HOST': os.environ['DB_CONTAINER_NAME'],
         'OPTIONS': {'charset': 'utf8',
                     'use_unicode': True},
         'TEST': {
-            'NAME': 'test_feedback_plugin'
+            'NAME': os.environ['DJANGO_TEST_DB_NAME'],
         }
     }
 }

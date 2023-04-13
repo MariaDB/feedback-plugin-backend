@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 services:
   db:
     build:
@@ -7,32 +7,42 @@ services:
         mariadb_version: "${MARIADB_VERSION}"
       dockerfile: docker/mariadb/Dockerfile
     restart: always
+    container_name: ${DB_CONTAINER_NAME}
     environment:
       - MARIADB_AUTO_UPGRADE='YES'
       - MARIADB_ROOT_PASSWORD
-      - DJANGO_DB_NAME
-      - DJANGO_DB_USER_NAME
-      - DJANGO_DB_USER_PASSWORD
+      - MARIADB_DATABASE
+      - MARIADB_USER
+      - MARIADB_PASSWORD
+      - DJANGO_TEST_DB_NAME
+      - MARIADB_MYSQL_LOCALHOST_USER
+    healthcheck:
+      test: ['CMD', "mariadb-admin", "--password=${MARIADB_ROOT_PASSWORD}", "--protocol", "tcp", "ping"]
     volumes:
       - ${MARIADB_DATADIR}:/var/lib/mysql:Z
       - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d:Z
       - ${MARIADB_TMPDIR}:/tmp/mariadb:Z
-    command: --tmpdir=/tmp/mariadb
+    networks:
+      - backend
+
   web:
     build:
-      context: ../
+      context: ./
       args:
         python_version: "${PYTHON_VERSION}"
-      dockerfile: docker/app/Dockerfile
+      dockerfile: ./app/Dockerfile
     restart: always
+    container_name: ${WEG_CONTAINER_NAME}
     environment:
       - DJANGO_ALLOWED_HOSTS
       - DJANGO_SECRET_KEY
       - DJANGO_DEBUG
-      - DJANGO_DB_NAME
-      - DJANGO_DB_USER_NAME
-      - DJANGO_DB_USER_PASSWORD
       - DJANGO_LOG_LEVEL
+      - DB_CONTAINER_NAME
+      - MARIADB_DATABASE
+      - MARIADB_USER
+      - MARIADB_PASSWORD
+      - DJANGO_TEST_DB_NAME
     command: gunicorn feedback_plugin.wsgi --bind 0.0.0.0:8000 -w 6 -t 4
                       --capture-output
                       --access-logfile /app/logs/gunicorn-access.log
@@ -41,22 +51,31 @@ services:
       # nginx serves the apps static files, share volume
       - static_volume:/app/src/staticfiles:Z
       - ../src/:/app/src/:Z
+      - ../logs:/app/logs
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
 
   nginx:
-    build:
-      context: ./nginx
-      args:
-        nginx_version: "${NGINX_VERSION}"
+    image: nginx:latest
     restart: always
+    container_name: ${NGINX_CONTAINER_NAME}
     volumes:
       - static_volume:/home/app/web/staticfiles:Z
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:rw
     ports:
       - 8000:80
     depends_on:
-      - db
       - web
+    networks:
+      - frontend
 
 volumes:
   static_volume:
+
+networks:
+  backend:
+  frontend:

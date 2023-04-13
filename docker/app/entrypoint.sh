@@ -3,7 +3,7 @@
 echo 'Booting up web-app'
 if ! python manage.py check --database default; then
   sleep 2;
-  echo 'Database not available, exiting.'
+  echo 'Database ${MARIADB_DATABASE} not available for user ${MARIADB_USER}, exiting.'
   return 1;
 fi
 

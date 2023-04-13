@@ -5,3 +5,4 @@ mysqlclient==2.1.0
 PyYAML==6.0
 pygments
 sqlparse
+gunicorn==20.0.4
