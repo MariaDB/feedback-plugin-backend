@@ -38,14 +38,19 @@ def process_from_date(start_date: datetime, end_date: datetime):
 
         values = []
         data = {}
+        errored = False
         for row in reader:
             # We only expect KV pairs.
             if len(row) != 2:
-                raw_upload.delete()
-                continue
+                errored = True
+                break
 
             data[row[0]] = row[1]
             values.append(Data(key=row[0], value=row[1]))
+
+        if errored:
+            raw_upload.delete()
+            continue
 
         if ('FEEDBACK_SERVER_UID' not in data
                 or len(data['FEEDBACK_SERVER_UID']) == 0):
