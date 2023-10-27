@@ -14,6 +14,11 @@ from .extractors import DataExtractor
 logger = logging.getLogger('etl')
 
 
+# Go through all RawData uploads between start_date and end_date and
+# create corresponding Server, Upload, Data entries.
+#
+# We skip special entries coming from MariaDB Server CI. These are
+# identified via FEEDBACK_USER_INFO entry being set to mysql-test.
 def process_from_date(start_date: datetime, end_date: datetime):
     raw_objects_iterator = RawData.objects.filter(
         upload_time__gt=start_date,
@@ -110,6 +115,7 @@ def process_from_date(start_date: datetime, end_date: datetime):
         raw_upload.delete()
 
 
+# Base function to go through all the raw uploaded data in batches.
 def process_raw_data():
     first_object = RawData.objects.order_by('upload_time').first()
     last_object = RawData.objects.order_by('-upload_time').first()
@@ -137,10 +143,16 @@ def process_raw_data():
     logger.info('Finished processing data')
 
 
+# Filters Data entries based on [start_date, end_date) date interval and
+# returns only those entries that are required by the data extractors passed
+# in.
+# If end_inclusive is set to true makes the date_time filter a closed interval
+# on both ends instead of just the start_date.
 def get_upload_data_for_data_extractors(start_date: datetime,
                                         end_date: datetime,
                                         data_extractors: list[DataExtractor],
-                                        end_inclusive: bool):
+                                        end_inclusive: bool
+) -> dict[int, dict[int, dict[str, list[str]]]]:
     keys = set()
     for extractor in data_extractors:
         keys |= extractor.get_required_keys()
@@ -171,9 +183,12 @@ def get_upload_data_for_data_extractors(start_date: datetime,
     return servers
 
 
+# Extract server facts for all data between start_date and end_date,
+# using the data_extractors provided.
+# If end_inclusive is set to True, the interval is closed, otherwise open.
 def extract_server_facts(start_date: datetime,
                          end_date: datetime,
-                         data_extractors: DataExtractor,
+                         data_extractors: list[DataExtractor],
                          end_inclusive: bool = True):
     logger.info(f'Extracting facts from {start_date} to {end_date}')
     servers = get_upload_data_for_data_extractors(start_date, end_date,
@@ -245,9 +260,12 @@ def check_if_upload_fact_exists(key: str,
         return None
 
 
+# Create upload facts between [start_date, end_date) using the data_extractors
+# provided.
+# If end_inclusive is true, the interval is [start_date, end_date].
 def extract_upload_facts(start_date: datetime,
                          end_date: datetime,
-                         data_extractors: DataExtractor,
+                         data_extractors: list[DataExtractor],
                          end_inclusive: bool = True):
     logger.info(f'Extracting facts from {start_date} to {end_date}')
     servers = get_upload_data_for_data_extractors(start_date, end_date,
