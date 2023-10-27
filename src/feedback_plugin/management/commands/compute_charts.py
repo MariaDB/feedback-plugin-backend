@@ -33,6 +33,23 @@ logger = logging.getLogger('commands')
 
 
 class Command(BaseCommand):
+    '''
+        This management command is meant to be called as part of a periodic
+        batch job. Since the current charts are computed on a monthly
+        breakdown, the batch job should generally be called at End of Month,
+        `python manage.py compute_charts --chart=all`
+
+        The batch job can:
+        a. Create all charts or any individual chart.
+        b. A chart can be recreated from scratch, using all the data available
+           or it can be merged with already computed data to save time.
+
+           By default, the batch job only computes charts using data that was
+           not previously used. (see ChartMetadata.computed_end_date)
+           The data that will be used in this case is the one from:
+           (ChartMetadata.computed_end_date, last_upload.get().upload_time]
+    '''
+
     def add_arguments(self, parser):
         parser.add_argument('--recreate', action='store_true')
         parser.add_argument('--chart', default='all')
