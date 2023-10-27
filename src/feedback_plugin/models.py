@@ -21,136 +21,146 @@ from django.utils import timezone
 
 
 class RawData(models.Model):
-  '''
-    This table holds the raw upload data reported.
-  '''
-  country = CountryField()
-  data = models.BinaryField()
-  upload_time = models.DateTimeField(default=timezone.now)
+    '''
+      This table holds the raw upload data reported.
+    '''
+    country = CountryField()
+    data = models.BinaryField()
+    upload_time = models.DateTimeField(default=timezone.now)
 
-  class Meta:
-    indexes = [
-        models.Index(fields=['upload_time'])
-    ]
+    class Meta:
+        indexes = [
+            models.Index(fields=['upload_time'])
+        ]
 
-  def __str__(self):
-    return f'{self.country}, {self.upload_time}, {len(self.data)}'
-
+    def __str__(self):
+        return f'{self.country}, {self.upload_time}, {len(self.data)}'
 
 
 class Server(models.Model):
-  '''
-    This table holds an entry for each unique server that has reported
-    data to the feedback plugin.
-  '''
-  def __str__(self):
-      return f'{self.id}'
+    '''
+      This table holds an entry for each unique server that has reported
+      data to the feedback plugin.
+    '''
+
+    def __str__(self):
+        return f'{self.id}'
 
 
 class Upload(models.Model):
-  '''
-    This table represents a data upload done by a particular server.
-  '''
-  upload_time = models.DateTimeField()
-  server = models.ForeignKey('Server',
-    on_delete=models.PROTECT,
-    db_column='server_id'
-  )
+    '''
+      This table represents a data upload done by a particular server.
+    '''
+    upload_time = models.DateTimeField()
+    server = models.ForeignKey(
+        'Server',
+        on_delete=models.PROTECT,
+        db_column='server_id'
+    )
 
-  class Meta:
-    indexes = [
-        models.Index(fields=['upload_time', 'server_id'])
-    ]
+    class Meta:
+        indexes = [
+            models.Index(fields=['upload_time', 'server_id'])
+        ]
 
-
-  def __str__(self):
-    return f'{self.upload_time}, {self.server.id}'
+    def __str__(self):
+        return f'{self.upload_time}, {self.server.id}'
 
 
 class Data(models.Model):
-  '''
-    This table holds the raw data uploaded by a server.
-  '''
-  key = models.CharField(max_length=100)
-  value = models.CharField(max_length=1000)
-  upload = models.ForeignKey('Upload',
-    on_delete=models.PROTECT,
-    db_column='upload_id'
-  )
+    '''
+      This table holds the raw data uploaded by a server.
+    '''
+    key = models.CharField(max_length=100)
+    value = models.CharField(max_length=1000)
+    upload = models.ForeignKey(
+        'Upload',
+        on_delete=models.PROTECT,
+        db_column='upload_id'
+    )
 
-  def __str__(self):
-    return f'{{{self.key} : {self.value}}} '
+    def __str__(self):
+        return f'{{{self.key} : {self.value}}} '
 
-  class Meta:
-    indexes = [
-        models.Index(fields=['upload', 'key'])
-    ]
+    class Meta:
+        indexes = [
+            models.Index(fields=['upload', 'key'])
+        ]
 
 
 class ComputedUploadFact(models.Model):
-  '''
-    This table holds computed metadata for each upload.
-  '''
-  upload = models.ForeignKey('Upload',
-    on_delete=models.PROTECT,
-    db_column='upload_id'
-  )
-  key = models.CharField(max_length=100)
-  value = models.CharField(max_length=1000)
+    '''
+      This table holds computed metadata for each upload.
+    '''
+    upload = models.ForeignKey(
+        'Upload',
+        on_delete=models.PROTECT,
+        db_column='upload_id'
+    )
+    key = models.CharField(max_length=100)
+    value = models.CharField(max_length=1000)
 
-  class Meta:
-    indexes = [
-        models.Index(fields=['key', 'value'])
-    ]
+    class Meta:
+        indexes = [
+            models.Index(fields=['key', 'value'])
+        ]
 
-  def __str__(self):
-   return f'{self.upload.id} : S{self.upload.server_id} -> {self.key} = {self.value}'
+    def __str__(self):
+        return (
+            f'{self.upload.id} : S{self.upload.server_id} -> '
+            f'{self.key} = {self.value}'
+        )
 
 
 class ComputedServerFact(models.Model):
-  '''
-    This table holds computed metadata for each server.
-  '''
-  server = models.ForeignKey('Server',
-    on_delete=models.PROTECT,
-    db_column='server_id'
-  )
-  key = models.CharField(max_length=100)
-  value = models.CharField(max_length=1000)
+    '''
+        This table holds computed metadata for each server.
+    '''
+    server = models.ForeignKey(
+        'Server',
+        on_delete=models.PROTECT,
+        db_column='server_id'
+    )
+    key = models.CharField(max_length=100)
+    value = models.CharField(max_length=1000)
 
-  class Meta:
-    indexes = [
-        models.Index(fields=['key', 'value'])
-    ]
+    class Meta:
+        indexes = [
+            models.Index(fields=['key', 'value'])
+        ]
 
-  def __str__(self):
-    return f'{self.server_id} -> {self.key} = {self.value}'
+    def __str__(self):
+        return f'{self.server_id} -> {self.key} = {self.value}'
 
 
 class Chart(models.Model):
-  '''
-    This table holds the pre-computed feedback plugin data used for charts
-    generation.
-  '''
-  id = models.SlugField(max_length=100, primary_key=True)
-  title = models.CharField(max_length=250) #Pretty title
-  values = models.JSONField(default=dict, blank=True, null=False)
+    '''
+        This table holds the pre-computed feedback plugin data used for charts
+        generation.
+    '''
+    id = models.SlugField(max_length=100, primary_key=True)
+    title = models.CharField(max_length=250)  # Pretty title
+    values = models.JSONField(default=dict, blank=True, null=False)
 
+    class Meta:
+        verbose_name_plural = "Feedback Plugin Chart Results"
 
-  class Meta:
-    verbose_name_plural = "Feedback Plugin Chart Results"
+    def __str__(self):
+        return self.title
 
-  def __str__(self):
-    return self.title
 
 class ChartMetadata(models.Model):
-  chart = models.OneToOneField('Chart', primary_key=True, on_delete=models.CASCADE,
-                               related_name='metadata')
-  computed_start_date = models.DateTimeField(blank=True, null=True)
-  computed_end_date = models.DateTimeField(blank=True, null=True)
+    chart = models.OneToOneField(
+        'Chart',
+        primary_key=True,
+        on_delete=models.CASCADE,
+        related_name='metadata')
+    computed_start_date = models.DateTimeField(blank=True, null=True)
+    computed_end_date = models.DateTimeField(blank=True, null=True)
 
-  def __str__(self):
-      return f'{self.computed_start_date}, {self.computed_end_date}'
+    def __str__(self):
+        return f'{self.computed_start_date}, {self.computed_end_date}'
+
 
 class Config(models.Model):
     key = models.CharField(max_length=128, primary_key=True)
