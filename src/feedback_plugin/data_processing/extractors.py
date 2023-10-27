@@ -34,7 +34,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         if 'uname_distribution' not in upload:
             return None
 
-        distro_string = upload['uname_distribution'][0].lower()
+        distro_string = upload['uname_distribution'][-1].lower()
         distro_keywords = [
             (['archlinux'], 'ArchLinux'),
             (['centos', 'rhel'], 'CentOS'),
@@ -57,7 +57,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         if 'uname_machine' not in upload:
             return None
 
-        machine = upload['uname_machine'][0].lower()
+        machine = upload['uname_machine'][-1].lower()
         if re.match('^(x(86_)?64)|(amd64)$', machine):
             machine_architecture = 'x86_64'
         elif re.match('^[ix][3-6]*86$', machine):
@@ -83,7 +83,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         if 'uname_sysname' not in upload:
             return None
 
-        sysname = upload['uname_sysname'][0].lower()
+        sysname = upload['uname_sysname'][-1].lower()
         if 'linux' in sysname:
             operating_system = 'Linux'
         elif 'windows' in sysname:
@@ -102,7 +102,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         if 'uname_version' not in upload:
             return None
 
-        version_string = upload['uname_version'][0].lower()
+        version_string = upload['uname_version'][-1].lower()
 
         # TODO(cvicentiu): Hack to clean up version strings. This will need
         # to be changed to cover and extract a wide range of data points.
@@ -112,7 +112,7 @@ class ArchitectureExtractor(ServerFactExtractor):
                 version_string = 'unknown'
                 distro_string = ''
                 if 'uname_distribution' in upload:
-                    distro_string = upload['uname_distribution'][0].lower()
+                    distro_string = upload['uname_distribution'][-1].lower()
 
                 # Crude expression for CentOS 8
                 if 'linux release' in distro_string:
