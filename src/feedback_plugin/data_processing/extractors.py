@@ -8,11 +8,35 @@ import sys
 
 class DataExtractor(ABC):
     @abstractmethod
-    def get_required_keys(self) -> set:
+    def get_required_keys(self) -> set[str]:
+        '''
+            Returns a list of Data keys that this data extractor
+            needs to look at in order to extract Facts.
+        '''
         pass
 
     @abstractmethod
-    def extract_facts(self, data_dict):
+    def extract_facts(self,
+                      data_dict: dict[int, dict[int, dict[str, list[str]]]]
+                      ) -> dict[int, dict[int, dict[str, str]]]:
+        '''
+        Data_dict is a dictionary of the form:
+        { <server_id> : {
+            <upload_id> : {
+                <upload_data_key> : [<values_for_upload_key>, ...] }}}
+
+        Returns a dictionary of the form:
+        {
+            <server_id1>:
+                <upload_id1>: {
+                    <fact_key1>: <fact_value1>,
+                    ...
+                    },
+                ...
+                },
+            ...
+        }
+        '''
         pass
 
 
@@ -25,12 +49,12 @@ class ServerFactExtractor(DataExtractor):
 
 
 class ArchitectureExtractor(ServerFactExtractor):
-    def get_required_keys(self):
+    def get_required_keys(self) -> set[str]:
         return {'uname_machine', 'uname_sysname', 'uname_version',
                 'uname_distribution', 'uname_release'}
 
     @staticmethod
-    def extract_distribution(upload):
+    def extract_distribution(upload: dict[str, list[str]]) -> str:
         if 'uname_distribution' not in upload:
             return None
 
@@ -53,7 +77,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         return distro_string
 
     @staticmethod
-    def extract_machine_architecture(upload):
+    def extract_machine_architecture(upload: dict[str, list[str]]) -> str:
         if 'uname_machine' not in upload:
             return None
 
@@ -79,7 +103,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         return machine_architecture
 
     @staticmethod
-    def extract_operating_system(upload):
+    def extract_operating_system(upload: dict[str, list[str]]) -> str:
         if 'uname_sysname' not in upload:
             return None
 
@@ -98,7 +122,7 @@ class ArchitectureExtractor(ServerFactExtractor):
         return operating_system
 
     @staticmethod
-    def extract_os_version(upload):
+    def extract_os_version(upload: dict[str, list[str]]) -> str:
         if 'uname_version' not in upload:
             return None
 
@@ -124,10 +148,12 @@ class ArchitectureExtractor(ServerFactExtractor):
 
         return version_string
 
-    def extract_facts(self, servers):
+    def extract_facts(self,
+                      data_dict: dict[int, dict[int, dict[str, list[str]]]]
+                      ) -> dict[int, dict[int, dict[str, str]]]:
         result = {}
 
-        for server_id, server_uploads in servers.items():
+        for server_id, server_uploads in data_dict.items():
             facts = {}
             for upload_id, upload in server_uploads.items():
                 fact = ArchitectureExtractor.extract_operating_system(upload)
@@ -152,7 +178,9 @@ class ArchitectureExtractor(ServerFactExtractor):
 
 class ServerVersionExtractor(UploadFactExtractor):
     @staticmethod
-    def extract_server_version(upload):
+    def extract_server_version(upload: dict[str, list[str]]) -> dict[str, str]:
+        # Version key not present or its present with NULL values.
+        # TODO(cvicentiu): Can upload['version'] actually be an empty list?
         if 'version' not in upload or len(upload['version']) == 0:
             return None
         pattern = re.compile('(?P<major>\\d+).(?P<minor>\\d+).(?P<point>\\d+)')
@@ -161,21 +189,27 @@ class ServerVersionExtractor(UploadFactExtractor):
         # duplicates.
         matches = pattern.match(upload['version'][-1])
 
+        # TODO(cvicentiu) Matches set to None means regex missmatch.
+        # Create a test case for this.
+        if matches is None:
+            return None
+
         result = {
             'server_version_major': matches.group('major'),
             'server_version_minor': matches.group('minor'),
             'server_version_point': matches.group('point'),
         }
 
-        # TODO(cvicentiu) handle invalid version
         return result
 
-    def get_required_keys(self):
+    def get_required_keys(self) -> set[str]:
         return {'version'}
 
-    def extract_facts(self, servers):
+    def extract_facts(self,
+                      data_dict: dict[int, dict[int, dict[str, list[str]]]]
+                      ) -> dict[int, dict[int, dict[str, str]]]:
         result = {}
-        for server_id, server_uploads in servers.items():
+        for server_id, server_uploads in data_dict.items():
             facts = {}
             for upload_id, upload in server_uploads.items():
                 fact = ServerVersionExtractor.extract_server_version(upload)
