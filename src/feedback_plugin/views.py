@@ -36,6 +36,7 @@ from .forms import UploadFileForm
 logger = logging.getLogger('views')
 
 
+# Class based view to return chart data as a JSON response, based on chart ID.
 class ChartView(View):
     chart_id = None
 
@@ -60,6 +61,9 @@ class ChartView(View):
         })
 
 
+# This is the endpoint that the MariaDB Feedback Plugin uses to post data.
+# We do not do any active processing, only save the raw upload for later
+# analysis.
 def handle_upload_form(request, ip=None, upload_time=timezone.now()):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
@@ -103,6 +107,9 @@ def file_post(request):
     return handle_upload_form(request)
 
 
+# This is a special endpoint used to populate the database with data from a
+# specific IP. The specific IP is passed as a HTTP header via
+# HTTP_X_REPORT_FROM_IP. It is not used by the MariaDB Server plugin directly.
 @csrf_exempt
 def file_post_with_ip(request):
     try:
