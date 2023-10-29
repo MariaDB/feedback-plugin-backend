@@ -17,6 +17,8 @@ and for [docker-compose](https://docs.docker.com/compose/install/) to install th
 # Initial start-up
 ```
 $ cd docker/
+$ mkdir -p mariadb/confdir && mkdir -p mariadb/datadir && mkdir -p mariadb/tmpdir
+$ sudo chown 999:999 mariadb/datadir mariadb/tmpdir
 $ docker-compose up --build
 ```
 
