@@ -30,16 +30,16 @@ First make sure the container stack is functional, by running `docker ps`. You
 should see the following entries:
 
 ```
-84c2814a6500   docker_nginx   "nginx -g 'daemon of…"   26 hours ago   Up 26 hours   0.0.0.0:8000->80/tcp, :::8000->80/tcp   docker_nginx_1
-c2d0bce78133   docker_web     "/app/entrypoint.sh …"   26 hours ago   Up 26 hours                                           docker_web_1
-09e10ff5387a   docker_db      "docker-entrypoint.s…"   26 hours ago   Up 26 hours   3306/tcp                                docker_db_1
+84c2814a6500   docker-nginx   "nginx -g 'daemon of…"   26 hours ago   Up 26 hours   0.0.0.0:8000->80/tcp, :::8000->80/tcp   feedback-nginx
+c2d0bce78133   docker-web     "/app/entrypoint.sh …"   26 hours ago   Up 26 hours                                           feedback-app
+09e10ff5387a   docker-db      "docker-entrypoint.s…"   26 hours ago   Up 26 hours   3306/tcp                                feedback-db
 ```
 
 Tests are run from within the `web` container. The command to run all unit tests
 is:
 
 ```
-docker exec -it docker_web_1 python manage.py test
+docker exec -it feedback-app python manage.py test
 ```
 
 The server listens on port 8000 on the local machine. You can access it via:

@@ -18,6 +18,8 @@ services:
       - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d:Z
       - ${MARIADB_TMPDIR}:/tmp/mariadb:Z
     command: --tmpdir=/tmp/mariadb
+    container_name: feedback-db
+
   web:
     build:
       context: ../
@@ -43,6 +45,7 @@ services:
       - ../src/:/app/src/:Z
     depends_on:
       - db
+    container_name: feedback-app
 
   nginx:
     build:
@@ -57,6 +60,7 @@ services:
     depends_on:
       - db
       - web
+    container_name: feedback-nginx
 
 volumes:
   static_volume:
