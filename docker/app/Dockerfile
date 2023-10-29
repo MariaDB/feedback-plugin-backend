@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED 1
 
 RUN apt-get install apt-transport-https curl
 RUN curl -o /etc/apt/trusted.gpg.d/mariadb_release_signing_key.asc 'https://mariadb.org/mariadb_release_signing_key.asc'
-RUN sh -c "echo 'deb https://mirror.mariadb.org/repo/10.11/debian/ bullseye main' >>/etc/apt/sources.list"
+RUN sh -c "echo 'deb https://mirror.mariadb.org/repo/10.11/debian/ bookworm main' >>/etc/apt/sources.list"
 
 # install gdal for django
 RUN apt-get update && apt-get install libgdal-dev libmariadb-dev -y
