@@ -15,6 +15,8 @@ class DataExtractor(ABC):
         '''
         pass
 
+
+class UploadFactExtractor(DataExtractor):
     @abstractmethod
     def extract_facts(self,
                       data_dict: dict[int, dict[int, dict[str, list[str]]]]
@@ -40,12 +42,29 @@ class DataExtractor(ABC):
         pass
 
 
-class UploadFactExtractor(DataExtractor):
-    pass
-
-
 class ServerFactExtractor(DataExtractor):
-    pass
+    @abstractmethod
+    def extract_facts(self,
+                      data_dict: dict[int, dict[int, dict[str, list[str]]]]
+                      ) -> dict[int, dict[str, str]]:
+        '''
+        Data_dict is a dictionary of the form:
+        { <server_id> : {
+            <upload_id> : {
+                <upload_data_key> : [<values_for_upload_key>, ...] }}}
+
+        Returns a dictionary of the form:
+        {
+            <server_id1>: {
+                <fact_key1>: <fact_value1>,
+                ...
+                },
+                ...
+            },
+            ...
+        }
+        '''
+        pass
 
 
 class ArchitectureExtractor(ServerFactExtractor):
@@ -150,7 +169,7 @@ class ArchitectureExtractor(ServerFactExtractor):
 
     def extract_facts(self,
                       data_dict: dict[int, dict[int, dict[str, list[str]]]]
-                      ) -> dict[int, dict[int, dict[str, str]]]:
+                      ) -> dict[int, dict[str, str]]:
         result = {}
 
         for server_id, server_uploads in data_dict.items():
@@ -220,12 +239,34 @@ class ServerVersionExtractor(UploadFactExtractor):
         return result
 
 
+def combine_server_facts(factset: list[dict[int, dict[str, str]]]) -> dict[int, dict[str, str]]:
+    '''Combine the provided server facts into a single fact dictionary.'''
+
+    result = defaultdict(dict)
+    for facts in factset:
+        for s_id in facts:
+            result[s_id].update(facts[s_id])
+    return result
+
+
+def combine_upload_facts(factset: list[dict[int, dict[int, dict[str, str]]]]) -> dict[int, dict[int, dict[str, str]]]:
+    '''Combine the provided upload facts into a single fact dictionary.'''
+
+    result = defaultdict[int, dict](lambda: defaultdict(dict))
+    for facts in factset:
+        for server_id, uploads in facts.items():
+            for upload_id, fields in uploads.items():
+                result[server_id][upload_id].update(fields)
+    return result
+
+
 class AllFactExtractor(DataExtractor):
     def __init__(self, class_type: type):
         def class_filter(member):
             if (inspect.isclass(member)
                     and issubclass(member, class_type)
-                    and member is not class_type):
+                    and member is not class_type
+                    and not issubclass(member, AllFactExtractor)):
                 return True
             return False
 
@@ -235,14 +276,6 @@ class AllFactExtractor(DataExtractor):
         for cls_member in cls_members:
             self.extractors.append(cls_member[1]())
 
-    def extract_facts(self, data_dict):
-        facts = defaultdict(dict)
-        for extractor in self.extractors:
-            new_facts = extractor.extract_facts(data_dict)
-            for s_id in new_facts:
-                facts[s_id].update(new_facts[s_id])
-        return facts
-
     def get_required_keys(self):
         result = set()
         for extractor in self.extractors:
@@ -250,11 +283,21 @@ class AllFactExtractor(DataExtractor):
         return result
 
 
-class AllUploadFactExtractor(AllFactExtractor):
+class AllUploadFactExtractor(AllFactExtractor, UploadFactExtractor):
     def __init__(self):
         super().__init__(UploadFactExtractor)
 
+    def extract_facts(self, data_dict) -> dict[int, dict[int, dict[str, str]]]:
+        return combine_upload_facts(
+            [extractor.extract_facts(data_dict) for extractor in self.extractors]
+        )
 
-class AllServerFactExtractor(AllFactExtractor):
+
+class AllServerFactExtractor(AllFactExtractor, ServerFactExtractor):
     def __init__(self):
         super().__init__(ServerFactExtractor)
+
+    def extract_facts(self, data_dict) -> dict[int, dict[str, str]]:
+        return combine_server_facts(
+            [extractor.extract_facts(data_dict) for extractor in self.extractors]
+        )
