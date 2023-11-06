@@ -4,6 +4,7 @@ from collections import defaultdict
 import inspect
 import re
 import sys
+import json
 
 
 class DataExtractor(ABC):
@@ -235,6 +236,37 @@ class ServerVersionExtractor(UploadFactExtractor):
                 if fact is None:
                     continue
                 facts[upload_id] = fact
+            result[server_id] = facts
+        return result
+
+
+COLLECTED_FEATURES = {'check_constraint', 'json', 'subquery', 'timezone'}
+'''The set of features collected by the extractor'''
+
+class ServerFeatureExtractor(UploadFactExtractor):
+    @staticmethod
+    def extract_features(upload: dict[str, list[str]]) -> dict[str, bool]:
+        result: dict[str, bool] = {}
+        for feature in COLLECTED_FEATURES:
+            if values := upload.get('feature_' + feature):
+                if any(value != "0" for value in values):
+                    result[feature] = True
+        return result
+
+    def get_required_keys(self) -> set[str]:
+        return {'feature_' + feature for feature in COLLECTED_FEATURES}
+
+    def extract_facts(self,
+                      data_dict: dict[int, dict[int, dict[str, list[str]]]]
+                      ) -> dict[int, dict[int, dict[str, str]]]:
+        result = {}
+        for server_id, server_uploads in data_dict.items():
+            facts: dict[int, dict[str, str]] = {}
+            for upload_id, upload in server_uploads.items():
+                fact = ServerFeatureExtractor.extract_features(upload)
+                if not fact:
+                    continue
+                facts[upload_id] = {"features": json.dumps(fact)}
             result[server_id] = facts
         return result
 
