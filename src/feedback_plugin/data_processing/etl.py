@@ -3,12 +3,14 @@ from datetime import datetime, timedelta
 from io import StringIO
 import csv
 import logging
+from typing import Sequence
 
 from django.db.models import Q
 
 from feedback_plugin.models import (ComputedServerFact, ComputedUploadFact,
                                     Data, RawData, Server, Upload)
-from .extractors import DataExtractor
+from .extractors import (DataExtractor, ServerFactExtractor, UploadFactExtractor,
+                         combine_server_facts, combine_upload_facts)
 
 
 logger = logging.getLogger('etl')
@@ -150,7 +152,7 @@ def process_raw_data():
 # on both ends instead of just the start_date.
 def get_upload_data_for_data_extractors(start_date: datetime,
                                         end_date: datetime,
-                                        data_extractors: list[DataExtractor],
+                                        data_extractors: Sequence[DataExtractor],
                                         end_inclusive: bool
 ) -> dict[int, dict[int, dict[str, list[str]]]]:
     keys = set()
@@ -188,17 +190,15 @@ def get_upload_data_for_data_extractors(start_date: datetime,
 # If end_inclusive is set to True, the interval is closed, otherwise open.
 def extract_server_facts(start_date: datetime,
                          end_date: datetime,
-                         data_extractors: list[DataExtractor],
+                         data_extractors: list[ServerFactExtractor],
                          end_inclusive: bool = True):
     logger.info(f'Extracting facts from {start_date} to {end_date}')
     servers = get_upload_data_for_data_extractors(start_date, end_date,
                                                   data_extractors,
                                                   end_inclusive)
-    facts = defaultdict(dict)
-    for extractor in data_extractors:
-        new_facts = extractor.extract_facts(servers)
-        for s_id in new_facts:
-            facts[s_id].update(new_facts[s_id])
+    facts = combine_server_facts(
+        [extractor.extract_facts(servers) for extractor in data_extractors]
+    )
 
     # Arrange all facts { 'key' : { server_id : value ... } }
     facts_by_key = defaultdict(dict)
@@ -265,18 +265,16 @@ def check_if_upload_fact_exists(key: str,
 # If end_inclusive is true, the interval is [start_date, end_date].
 def extract_upload_facts(start_date: datetime,
                          end_date: datetime,
-                         data_extractors: list[DataExtractor],
+                         data_extractors: list[UploadFactExtractor],
                          end_inclusive: bool = True):
     logger.info(f'Extracting facts from {start_date} to {end_date}')
     servers = get_upload_data_for_data_extractors(start_date, end_date,
                                                   data_extractors,
                                                   end_inclusive)
 
-    facts = defaultdict(dict)
-    for extractor in data_extractors:
-        new_facts = extractor.extract_facts(servers)
-        for s_id in new_facts:
-            facts[s_id].update(new_facts[s_id])
+    facts = combine_upload_facts(
+        [extractor.extract_facts(servers) for extractor in data_extractors]
+    )
 
     logger.debug(f'Extracted facts for {len(facts)} servers')
 

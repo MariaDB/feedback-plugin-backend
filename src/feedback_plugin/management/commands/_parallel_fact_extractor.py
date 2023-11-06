@@ -1,18 +1,19 @@
 from concurrent.futures import ProcessPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
-from typing import Callable
+from typing import Callable, TypeVar, Generic
 
 from django.core.management.base import BaseCommand
 
 from ...data_processing import extractors
 
 
-class ProcessPoolFactExtractor(BaseCommand):
+Extractor = TypeVar('Extractor', bound=extractors.DataExtractor)
+class ProcessPoolFactExtractor(Generic[Extractor], BaseCommand):
     def __init__(
             self,
             extract_cb: Callable[[datetime, datetime,
-                                  list[extractors.DataExtractor], bool], None],
-            extractors: list[extractors.DataExtractor],
+                                  list[Extractor], bool], None],
+            extractors: list[Extractor],
             *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._extract_cb = extract_cb
