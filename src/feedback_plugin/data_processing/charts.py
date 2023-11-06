@@ -8,27 +8,37 @@ from django.db import connection
 from feedback_plugin.models import Upload
 
 
-def compute_server_count_by_month(start_date: datetime,
-                                  end_date: datetime,
-                                  start_closed_interval: bool
-) -> dict[str, list[str]]:
-    server_counts = Upload.objects.annotate(
+def get_uploads(start_date: datetime, end_date: datetime, start_closed_interval: bool):
+    '''
+        Return the uploads in the provided time interval, grouped by year and
+        month.
+    '''
+
+    uploads = Upload.objects.annotate(
         year=ExtractYear('upload_time'),
         month=ExtractMonth('upload_time'),
     ).values(
         'year',
         'month',
-    ).annotate(
-        count=Count('server__id', distinct=True),
     )
 
     if start_closed_interval:
-        server_counts = server_counts.filter(upload_time__gte=start_date)
+        uploads = uploads.filter(upload_time__gte=start_date)
     else:
-        server_counts = server_counts.filter(upload_time__gt=start_date)
+        uploads = uploads.filter(upload_time__gt=start_date)
 
-    server_counts = server_counts.filter(
+    return uploads.filter(
         upload_time__lte=end_date,
+    )
+
+
+def compute_server_count_by_month(start_date: datetime,
+                                  end_date: datetime,
+                                  start_closed_interval: bool
+) -> dict[str, list[str]]:
+    uploads = get_uploads(start_date, end_date, start_closed_interval)
+    server_counts = uploads.annotate(
+        count=Count('server__id', distinct=True),
     ).order_by(
         'year',
         'month',
