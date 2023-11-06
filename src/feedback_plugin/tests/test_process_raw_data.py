@@ -78,4 +78,4 @@ class TestLoadFixtures(TransactionTestCase):
     self.assertEqual(Upload.objects.all().count(), 8)
     self.assertEqual(Server.objects.all().count(), 5)
     self.assertEqual(ComputedServerFact.objects.all().count(), 36)
-    self.assertEqual(ComputedUploadFact.objects.all().count(), 24)
+    self.assertEqual(ComputedUploadFact.objects.all().count(), 31)
