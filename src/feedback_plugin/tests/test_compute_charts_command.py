@@ -38,8 +38,8 @@ class ComputeChartsCommand(TestCase):
         first_upload = Upload.objects.all().order_by('upload_time')[:1][0]
         last_upload = Upload.objects.all().order_by('-upload_time')[:1][0]
 
-        self.assertEqual(Chart.objects.all().count(), 3)
-        self.assertEqual(ChartMetadata.objects.all().count(), 3)
+        self.assertEqual(Chart.objects.all().count(), 4)
+        self.assertEqual(ChartMetadata.objects.all().count(), 4)
 
         chart = Chart.objects.get(id='server-count')
         self.assertEqual(chart.title, 'Server Count by Month')
@@ -144,4 +144,34 @@ class ComputeChartsCommand(TestCase):
                                 'x': ['2022-1', '2022-2', '2022-3'],
                                 'y': [3, 4, 1],
                             }
+                         })
+
+    def test_compute_features_by_month(self):
+        create_test_database()
+
+        ComputeChartsCommand.call('--recreate', '--chart=feature-count')
+
+        self.assertEqual(Chart.objects.all().count(), 1)
+
+        chart = Chart.objects.get(id='feature-count')
+
+        self.assertEqual(chart.title, 'Feature Count by Month')
+        self.assertEqual(chart.values,
+                         {
+                            'check_constraint': {
+                                'x': ['2022-01', '2022-02'],
+                                'y': [2, 2],
+                            },
+                            'json': {
+                                'x': ['2022-01', '2022-02'],
+                                'y': [2, 2],
+                            },
+                            'subquery': {
+                                'x': ['2022-01', '2022-02', '2022-03'],
+                                'y': [2, 2, 1],
+                            },
+                            'timezone': {
+                                'x': ['2022-01', '2022-02', '2022-03'],
+                                'y': [2, 2, 1],
+                            },
                          })
