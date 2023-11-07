@@ -19,6 +19,10 @@ CHARTS_MAP = {
             'callback': charts.compute_server_count_by_month,
             'title': 'Server Count by Month',
         },
+        'feature-count': {
+            'callback': charts.compute_feature_counts_by_month,
+            'title': 'Feature Count by Month',
+        },
         'version-breakdown': {
             'callback': charts.compute_version_breakdown_by_month,
             'title': 'Server Version Breakdown by Month',

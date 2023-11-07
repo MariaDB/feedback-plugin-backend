@@ -3,9 +3,11 @@ from collections import defaultdict
 
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.db.models import Count
+from django.db.models.expressions import RawSQL
 from django.db import connection
 
 from feedback_plugin.models import Upload
+from .extractors import COLLECTED_FEATURES
 
 
 def get_uploads(start_date: datetime, end_date: datetime, start_closed_interval: bool):
@@ -50,6 +52,56 @@ def compute_server_count_by_month(start_date: datetime,
             'y': [int(f"{value['count']}") for value in server_counts]
         }
     }
+
+
+def compute_feature_count_by_month(start_date: datetime,
+                                   end_date: datetime,
+                                   start_closed_interval: bool,
+                                   feature: str,
+) -> dict[str, dict[str, list[str] | list[int]]]:
+    uploads = get_uploads(start_date, end_date, start_closed_interval)
+
+    feature_query = """
+    SELECT
+        cuf.upload_id
+    FROM
+        feedback_plugin_computeduploadfact cuf
+    WHERE
+        cuf.key = 'features'
+        AND JSON_VALUE(cuf.value, CONCAT('$.', %s))
+    """
+    server_counts = uploads.filter(
+        id__in=RawSQL(feature_query, (feature,))
+    ).annotate(
+        count=Count('server__id', distinct=True)
+    ).order_by(
+        'year',
+        'month',
+    )
+
+    return {
+        feature: {
+            'x': [f"{value['year']}-{value['month']:0>2}" for value in server_counts],
+            'y': [int(f"{value['count']}") for value in server_counts]
+        }
+    }
+
+
+def compute_feature_counts_by_month(start_date: datetime,
+                                    end_date: datetime,
+                                    start_closed_interval: bool,
+) -> dict[str, dict[str, list[str] | list[int]]]:
+    result = {}
+    for feature in COLLECTED_FEATURES:
+        result.update(
+            compute_feature_count_by_month(
+                start_date,
+                end_date,
+                start_closed_interval,
+                feature,
+            )
+        )
+    return result
 
 
 def compute_version_breakdown_by_month(start_date: datetime,
