@@ -89,7 +89,7 @@ class ArchitectureExtractor(ServerFactExtractor):
             machine_architecture = 'x86'
         elif re.match('^armv[5-7]', machine):
             machine_architecture = 'ARM 32Bit'
-        elif re.match('^aarch64$', machine):
+        elif re.match('^(aarch64|arm64)$', machine):
             machine_architecture = 'ARM 64Bit'
         elif re.match('^hp_', machine):
             machine_architecture = 'HP Itanium'
