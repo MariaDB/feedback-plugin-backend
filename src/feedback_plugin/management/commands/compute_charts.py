@@ -94,6 +94,8 @@ class Command(BaseCommand):
     def merge_multi_series_chart_data(chart_values: dict[str, dict[str, list]],
                                       new_data: dict[str, dict[str, list]]
     ) -> dict[str, dict[str, list]]:
+        logger.info(f'Already: {chart_values}')
+        logger.info(f'{new_data}')
         result = {}
         for series in chart_values:
             new_data_series = {}
@@ -105,6 +107,7 @@ class Command(BaseCommand):
         for series in new_data:
             if series not in result:
                 result[series] = copy.deepcopy(new_data[series])
+        logger.info(f'Result: {result}')
         return result
 
     @staticmethod

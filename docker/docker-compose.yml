@@ -6,6 +6,7 @@ services:
       args:
         mariadb_version: "${MARIADB_VERSION}"
       dockerfile: docker/mariadb/Dockerfile
+    container_name: feedback-db
     restart: always
     environment:
       - MARIADB_AUTO_UPGRADE='YES'
@@ -19,6 +20,10 @@ services:
       - ${MARIADB_TMPDIR}:/tmp/mariadb:Z
     command: --tmpdir=/tmp/mariadb
     container_name: feedback-db
+    logging:
+      driver: journald
+      options:
+        tag: "feedback-db"
 
   web:
     build:
@@ -26,6 +31,7 @@ services:
       args:
         python_version: "${PYTHON_VERSION}"
       dockerfile: docker/app/Dockerfile
+    container_name: feedback-web
     restart: always
     environment:
       - DJANGO_ALLOWED_HOSTS
@@ -46,12 +52,17 @@ services:
     depends_on:
       - db
     container_name: feedback-app
+    logging:
+      driver: journald
+      options:
+        tag: "feedback-web"
 
   nginx:
     build:
       context: ./nginx
       args:
         nginx_version: "${NGINX_VERSION}"
+    container_name: feedback-nginx
     restart: always
     volumes:
       - static_volume:/home/app/web/staticfiles:Z
@@ -61,6 +72,10 @@ services:
       - db
       - web
     container_name: feedback-nginx
+    logging:
+      driver: journald
+      options:
+        tag: "feedback-nginx"
 
 volumes:
   static_volume:
