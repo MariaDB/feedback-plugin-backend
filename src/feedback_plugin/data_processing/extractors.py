@@ -107,10 +107,8 @@ class ArchitectureExtractor(ServerFactExtractor):
         elif re.match('^[ix][3-6]*86$', machine):
             # This check must happen after x86_64
             machine_architecture = 'x86'
-        elif re.match('^armv[5-7]', machine):
-            machine_architecture = 'ARM 32Bit'
-        elif re.match('^aarch64$', machine):
-            machine_architecture = 'ARM 64Bit'
+        elif re.match('^(aarch64|arm64)$', machine):
+            machine_architecture = 'armv8'
         elif re.match('^hp_', machine):
             machine_architecture = 'HP Itanium'
         elif re.match('^alpha', machine):
