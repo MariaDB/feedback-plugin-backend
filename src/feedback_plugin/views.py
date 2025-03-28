@@ -64,7 +64,7 @@ class ChartView(View):
 # This is the endpoint that the MariaDB Feedback Plugin uses to post data.
 # We do not do any active processing, only save the raw upload for later
 # analysis.
-def handle_upload_form(request, ip=None, upload_time=timezone.now()):
+def handle_upload_form(request, ip=None, upload_time=None):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
 
@@ -89,6 +89,9 @@ def handle_upload_form(request, ip=None, upload_time=timezone.now()):
         report_country = geoip.country_code(ip)
     except (GeoIP2Exception, GeoIP2Error, TypeError, socket.gaierror):
         report_country = 'ZZ'  # Unknown according to ISO 3166-1993
+
+    if upload_time is None:
+        upload_time = timezone.now()
 
     # TODO(andreia) configure web server to limit post size otherwise
     # we could run into a Denial of Service attack if we get too big of
