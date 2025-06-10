@@ -153,7 +153,7 @@ def get_uploads(request):
     except ValueError:
         return HttpResponseBadRequest("Invalid date format, expected YYYY-MM-DD")
 
-    page = request.GET.get('page', 1)
+    page = request.GET.get('page', '1')
 
     if not page.isdigit() or int(page) < 1:
         return HttpResponseBadRequest("Invalid page number, must be a positive integer")
