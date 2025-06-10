@@ -27,12 +27,20 @@ def process_from_date(start_date: datetime, end_date: datetime):
         upload_time__lte=end_date
     ).order_by('upload_time').iterator()
 
+    num_ignored = 0
+
     for raw_upload in raw_objects_iterator:
         country_code = raw_upload.country
         raw_upload_time = raw_upload.upload_time
 
-        raw_data = StringIO(raw_upload.data.decode('utf-8')
-                            .replace('\x00', ''))
+        try:
+            raw_data = StringIO(raw_upload.data.decode('utf-8')
+                                .replace('\x00', ''))
+        except:
+            logger.info('Deleted raw_upload')
+            num_ignored += 1
+            raw_upload.delete()
+            continue
 
         reader = csv.reader(raw_data, delimiter='\t')
 
@@ -148,6 +156,7 @@ def process_raw_data():
         start_date = local_end_date
 
     logger.info('Finished processing data')
+    logger.info(f'Ignored {num_ignored} entries')
 
 
 # Filters Data entries based on [start_date, end_date) date interval and
