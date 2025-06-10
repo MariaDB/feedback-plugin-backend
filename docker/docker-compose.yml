@@ -41,7 +41,7 @@ services:
       - DJANGO_DB_USER_NAME
       - DJANGO_DB_USER_PASSWORD
       - DJANGO_LOG_LEVEL
-    command: gunicorn feedback_plugin.wsgi --bind 0.0.0.0:8000 -w 6 -t 4
+    command: gunicorn feedback_plugin.wsgi --bind 0.0.0.0:8000 -w 6 -t 25
                       --capture-output
                       --access-logfile /app/logs/gunicorn-access.log
                       --reload
