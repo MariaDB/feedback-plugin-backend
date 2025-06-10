@@ -16,6 +16,7 @@
 '''
 
 import datetime
+from datetime import  timedelta
 import logging
 import socket
 
@@ -164,7 +165,8 @@ def get_uploads(request):
     uploads_data = []
     uploads = (Upload.objects.select_related('server')
                .prefetch_related('data_set')
-               .filter(upload_time__date=date)
+               .filter(upload_time__gte=date)
+               .filter(upload_time__lt=date + timedelta(days=1))
                .order_by('id')[offset:offset + MAX_PER_PAGE])
 
     server_ids = set(upload.server.id for upload in uploads)
