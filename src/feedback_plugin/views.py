@@ -29,7 +29,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from geoip2.errors import GeoIP2Error
 
-from .models import Chart, Config, RawData
+from .models import Chart, Config, RawData, Upload, ComputedServerFact
 from .forms import UploadFileForm
 
 
@@ -132,3 +132,64 @@ def file_post_with_ip(request):
     upload_time = date.replace(tzinfo=datetime.timezone.utc)
 
     return handle_upload_form(request, ip, upload_time)
+
+
+def get_uploads(request):
+    proposed_key = request.GET.get('X_API_KEY_UPLOADS')
+    if not proposed_key:
+        return HttpResponseForbidden("Invalid API Key")
+
+    if request.GET.get('X_API_KEY_UPLOADS') != Config.objects.get(key='X_API_KEY_UPLOADS').value:
+        return HttpResponseForbidden("Invalid API Key")
+
+    date = request.GET.get('date')
+
+    if not date:
+        return HttpResponseBadRequest("Missing date parameter")
+
+    try:
+        date = datetime.datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        return HttpResponseBadRequest("Invalid date format, expected YYYY-MM-DD")
+
+    page = request.GET.get('page', 1)
+
+    if not page.isdigit() or int(page) < 1:
+        return HttpResponseBadRequest("Invalid page number, must be a positive integer")
+
+    MAX_PER_PAGE = 100
+    offset = (int(page) - 1) * MAX_PER_PAGE
+    # Fetch data and uploads for the given date, paginated
+
+    uploads_data = []
+    uploads = (Upload.objects.select_related('server')
+               .prefetch_related('data_set')
+               .filter(upload_time__date=date)
+               .order_by('id')[offset:offset + MAX_PER_PAGE])
+
+    server_ids = set(upload.server.id for upload in uploads)
+
+    facts = (ComputedServerFact.objects
+             .select_related('server')
+             .filter(server__in=server_ids)
+             .filter(key='country_code'))
+    server_dict = {fact.server.id: fact.value for fact in facts}
+
+    for upload in uploads:
+        data_list = []
+        for data_item in upload.data_set.all():
+            data_list.append({
+                "key": data_item.key,
+                "value": data_item.value
+            })
+        uploads_data.append({
+            "id": upload.id,
+            "data": data_list,
+            "upload_time": upload.upload_time.isoformat(),
+            "server": {
+                "id": upload.server.id,
+                "country_code": server_dict[upload.server.id],
+            }
+        })
+
+    return JsonResponse({"uploads": uploads_data, "page": page}, safe=True)

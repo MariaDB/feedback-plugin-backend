@@ -36,4 +36,5 @@ urlpatterns = [
      path('rest/v1/file-post-protected/',
           views.file_post_with_ip,
           name='file_post_protected'),
+     path('rest/v1/get_uploads/', views.get_uploads, name='get_uploads'),
 ]
