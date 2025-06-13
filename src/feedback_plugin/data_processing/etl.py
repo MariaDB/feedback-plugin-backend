@@ -129,6 +129,7 @@ def process_from_date(start_date: datetime, end_date: datetime):
 
         raw_upload.delete()
 
+    logger.info(f'Ignored {num_ignored} entries')
 
 # Base function to go through all the raw uploaded data in batches.
 def process_raw_data():
@@ -156,7 +157,6 @@ def process_raw_data():
         start_date = local_end_date
 
     logger.info('Finished processing data')
-    logger.info(f'Ignored {num_ignored} entries')
 
 
 # Filters Data entries based on [start_date, end_date) date interval and
