@@ -47,14 +47,21 @@ def process_from_date(start_date: datetime, end_date: datetime):
         values = []
         data = {}
         errored = False
+        value_max_length = Data._meta.get_field('value').max_length
         for row in reader:
             # We only expect KV pairs.
             if len(row) != 2:
                 errored = True
                 break
 
-            data[row[0]] = row[1]
-            values.append(Data(key=row[0], value=row[1]))
+            value = row[1]
+            if len(value) > value_max_length:
+                logger.info(f'Truncated value for key {row[0]!r} from '
+                           f'{len(value)} to {value_max_length} chars')
+                value = value[:value_max_length]
+
+            data[row[0]] = value
+            values.append(Data(key=row[0], value=value))
 
         if errored:
             raw_upload.delete()

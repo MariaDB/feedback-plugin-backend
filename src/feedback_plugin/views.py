@@ -88,6 +88,12 @@ def handle_upload_form(request, ip=None, upload_time=None):
         if ip is None:
             raise TypeError
         report_country = geoip.country_code(ip)
+        if report_country is None:
+            # GeoIP2 can resolve the IP but still have no country attached
+            # to it (e.g. anonymous proxy / satellite ranges) without
+            # raising an exception.
+            logger.warning(f'GeoIP2 returned no country for IP {ip}')
+            report_country = 'ZZ'
     except (GeoIP2Exception, GeoIP2Error, TypeError, socket.gaierror):
         report_country = 'ZZ'  # Unknown according to ISO 3166-1993
 
