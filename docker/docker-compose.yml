@@ -1,4 +1,4 @@
-version: '3'
+---
 services:
   db:
     build:
@@ -19,7 +19,6 @@ services:
       - ${MARIADB_CONFDIR}:/etc/mysql/mariadb.conf.d:Z
       - ${MARIADB_TMPDIR}:/tmp/mariadb:Z
     command: --tmpdir=/tmp/mariadb
-    container_name: feedback-db
     logging:
       driver: journald
       options:
@@ -51,7 +50,6 @@ services:
       - ../src/:/app/src/:Z
     depends_on:
       - db
-    container_name: feedback-app
     logging:
       driver: journald
       options:
@@ -71,7 +69,6 @@ services:
     depends_on:
       - db
       - web
-    container_name: feedback-nginx
     logging:
       driver: journald
       options:
