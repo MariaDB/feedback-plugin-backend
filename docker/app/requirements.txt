@@ -1,4 +1,4 @@
-Django==4.1.2
+Django==4.1.7
 django_countries==7.3.2
 geoip2==4.6.0
 mysqlclient==2.1.0
