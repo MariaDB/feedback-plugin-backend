@@ -24,9 +24,11 @@ from django.http.response import (HttpResponse, HttpResponseNotAllowed,
                                   HttpResponseBadRequest, JsonResponse,
                                   HttpResponseForbidden)
 from django.contrib.gis.geoip2 import GeoIP2, GeoIP2Exception
+from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_safe
 
 from geoip2.errors import GeoIP2Error
 
@@ -35,6 +37,11 @@ from .forms import UploadFileForm
 
 
 logger = logging.getLogger('views')
+
+
+@require_safe
+def index(request):
+    return render(request, 'index.html')
 
 
 # Class based view to return chart data as a JSON response, based on chart ID.

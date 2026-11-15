@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MariaDB Feedback Plugin Backend</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 46em;
+            margin: 2em auto;
+            padding: 0 1em;
+            line-height: 1.5;
+        }
+        code {
+            background: #f2f2f2;
+            padding: 0 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>MariaDB Feedback Plugin Backend</h1>
+
+    <p>
+        This server collects the anonymous usage reports sent by MariaDB
+        Server's
+        <a href="https://mariadb.com/kb/en/feedback-plugin/">feedback plugin</a>
+        and turns them into aggregate statistics.
+    </p>
+
+    <h2>Sending reports</h2>
+    <p>
+        Point the plugin at this server by setting
+        <code>feedback_url</code> to
+        <code>{{ request.scheme }}://{{ request.get_host }}{% url 'post' %}</code>.
+        Reports are accepted as <code>POST</code> requests only.
+    </p>
+
+    <h2>Statistics</h2>
+    <p>Aggregated data is available as JSON:</p>
+    <ul>
+        <li><a href="{% url 'server_count' %}">Server count</a></li>
+        <li><a href="{% url 'version_breakdown' %}">Version breakdown</a></li>
+        <li><a href="{% url 'architecture_breakdown' %}">Architecture breakdown</a></li>
+        <li><a href="{% url 'feature_count' %}">Feature count</a></li>
+        <li><a href="{% url 'os' %}">Operating systems</a></li>
+    </ul>
+
+    <p>
+        Source code:
+        <a href="https://github.com/MariaDB/feedback-plugin-backend">MariaDB/feedback-plugin-backend</a>
+    </p>
+</body>
+</html>

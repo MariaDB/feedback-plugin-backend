@@ -18,6 +18,7 @@ from django.urls import path
 from feedback_plugin import views
 
 urlpatterns = [
+     path('', views.index, name='index'),
      path('admin/', admin.site.urls),
 
      path('rest/v1/charts/server-count/',
@@ -27,10 +28,14 @@ urlpatterns = [
           views.ChartView.as_view(chart_id='version-breakdown'),
           name='version_breakdown'),
      path('rest/v1/charts/architecture-breakdown/',
-          views.ChartView.as_view(chart_id='architecture-breakdown')),
+          views.ChartView.as_view(chart_id='architecture-breakdown'),
+          name='architecture_breakdown'),
      path('rest/v1/charts/feature-count/',
-          views.ChartView.as_view(chart_id='feature-count')),
-     path('rest/v1/charts/os/', views.ChartView.as_view(chart_id='os')),
+          views.ChartView.as_view(chart_id='feature-count'),
+          name='feature_count'),
+     path('rest/v1/charts/os/',
+          views.ChartView.as_view(chart_id='os'),
+          name='os'),
      path('rest/v1/post', views.file_post, name='post'),
      path('rest/v1/file-post/', views.file_post, name='file_post'),
      path('rest/v1/file-post-protected/',
